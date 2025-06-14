@@ -1,0 +1,20 @@
+services:
+  trading-alarm-clock:
+    build: ./docker
+    container_name: trading-alarm-clock
+    volumes:
+      - .:/app
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    working_dir: /app
+    tty: true
+    stdin_open: true
+    user: node
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - NO_AT_BRIDGE=1
+    network_mode: host
+    privileged: true
+    # X11 for mac 
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

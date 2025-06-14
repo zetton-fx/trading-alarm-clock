@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+/* カスタムスタイル */
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* スクロールバーを非表示 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100vh;
+}
+
+/* デジタル時計用のフォント */
+.digital-font {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+} 
+
+/* アプリをドラッグできるようにする */
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+/* ドラッグできない要素 (ボタンなど) */
+.no-drag {
+  -webkit-app-region: no-drag;
+}
