@@ -23,10 +23,10 @@ jobs:
         cache: 'npm'
 
     - name: Install dependencies
+      shell: bash
       run: |
         npm ci
-        # macOSの場合、Rollupのネイティブモジュールを再インストール
-        if [ "${{ matrix.os }}" == "macos-latest" ]; then
+        if [ "${{ runner.os }}" == "macOS" ]; then
           npm rebuild rollup
         fi
 
