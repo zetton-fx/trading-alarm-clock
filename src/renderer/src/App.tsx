@@ -40,7 +40,7 @@ function App() {
   }, [])
 
   return (
-    <div className="flex items-center justify-center h-full bg-gray-900">
+    <div className="flex items-center justify-center h-full drag-region">
       <div className="text-center">
         <div className="digital-font text-green-400 bg-black px-8 py-4 rounded-lg border-2 border-green-400 shadow-lg">
           <div className="text-4xl mb-2">{date}</div>

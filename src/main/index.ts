@@ -8,7 +8,10 @@ function createWindow(): void {
     height: 200,
     show: false,
     autoHideMenuBar: true,
+    titleBarStyle: 'hidden',
     resizable: false,
+    transparent: true,
+    frame: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,

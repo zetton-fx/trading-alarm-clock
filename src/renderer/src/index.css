@@ -22,3 +22,13 @@ html, body {
   font-weight: bold;
   letter-spacing: 0.1em;
 } 
+
+/* アプリをドラッグできるようにする */
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+/* ドラッグできない要素 (ボタンなど) */
+.no-drag {
+  -webkit-app-region: no-drag;
+}
