@@ -1,0 +1,67 @@
+{
+    "name": "trading-alarm-clock",
+    "version": "0.0.1",
+    "main": "out/main/index.js",
+    "scripts": {
+        "dev": "electron-vite dev",
+        "build": "electron-vite build",
+        "preview": "electron-vite preview",
+        "dist": "electron-builder"
+    },
+    "dependencies": {
+        "@tailwindcss/vite": "^4.1.8",
+        "react": "^19.1.0",
+        "react-dom": "^19.1.0",
+        "tailwindcss": "^4.1.8"
+    },
+    "devDependencies": {
+        "@types/react": "^19.0.5",
+        "@types/react-dom": "^19.0.3",
+        "electron": "^36.4.0",
+        "electron-builder": "^26.0.12",
+        "electron-vite": "^3.1.0",
+        "typescript": "^5.7.5",
+        "vite": "^6.3.5"
+    },
+    "build": {
+        "appId": "com.github.zetton-fx.trading-alarm-clock",
+        "productName": "Trading Alarm Clock",
+        "files": [
+            "out/**/*"
+        ],
+        "directories": {
+            "buildResources": "build",
+            "output": "release"
+        },
+        "win": {
+            "target": [
+                "nsis"
+            ]
+        },
+        "mac": {
+            "target": [
+                "dmg"
+            ],
+            "category": "public.app-category.utilities",
+            "hardenedRuntime": true,
+            "gatekeeperAssess": false,
+            "entitlements": "build/entitlements.mac.plist",
+            "entitlementsInherit": "build/entitlements.mac.plist"
+        },
+        "linux": {
+            "target": [
+                "AppImage"
+            ],
+            "category": "Utility"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "createDesktopShortcut": true
+        },
+        "asar": true,
+        "asarUnpack": [
+            "node_modules/**/*.node"
+        ]
+    }
+}
