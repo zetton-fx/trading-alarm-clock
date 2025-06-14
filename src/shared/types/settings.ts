@@ -1,0 +1,54 @@
+export interface AppSettings {
+  // サイズ設定（1-5の5段階）
+  size: 1 | 2 | 3 | 4 | 5;
+  
+  // 常に前面表示フラグ
+  alwaysOnTop: boolean;
+  
+  // 日時表示形式（'datetime' | 'time'）
+  displayFormat: 'datetime' | 'time';
+  
+  // フォント設定
+  font: 'DSEG7Classic' | 'DSEG7ClassicMini' | 'DSEG7Modern' | 'DSEG7ModernMini' | 'DSEG14Classic' | 'DSEG14ClassicMini' | 'DSEG14Modern' | 'DSEG14ModernMini' | 'Arial' | 'Helvetica' | 'Times New Roman' | 'Courier New' | 'Verdana' | 'Georgia' | 'Trebuchet MS' | 'Comic Sans MS' | 'Impact' | 'Lucida Console' | 'Tahoma' | 'Palatino' | 'Garamond' | 'Bookman' | 'Avant Garde' | 'Hiragino Sans' | 'Meiryo' | 'Noto Sans JP' | 'Yu Gothic' | 'MS Gothic' | 'MS Mincho';
+  
+  // フォントウェイト設定
+  fontWeight: 'light' | 'regular' | 'bold';
+  
+  // フォントスタイル設定
+  fontStyle: 'normal' | 'italic';
+  
+  // 文字色
+  textColor: string;
+  
+  // 背景色
+  backgroundColor: string;
+  
+  // 発光色
+  glowColor: string;
+  
+  // 文字の発光強度（0-10）
+  glowIntensity: number;
+}
+
+// デフォルト設定
+export const defaultSettings: AppSettings = {
+  size: 3,
+  alwaysOnTop: true,
+  displayFormat: 'datetime',
+  font: 'DSEG7Classic',
+  fontWeight: 'regular',
+  fontStyle: 'normal',
+  textColor: '#ffffff', // 白色
+  backgroundColor: '#000000', // 黒色
+  glowColor: '#a1b6e8', // 水色
+  glowIntensity: 2
+};
+
+// サイズに対応するウィンドウサイズとフォントサイズのマッピング
+export const sizeMapping = {
+  1: { windowWidth: 300, windowHeight: 150, fontSize: { date: 24, time: 36 } },
+  2: { windowWidth: 350, windowHeight: 175, fontSize: { date: 28, time: 42 } },
+  3: { windowWidth: 400, windowHeight: 200, fontSize: { date: 32, time: 48 } },
+  4: { windowWidth: 450, windowHeight: 225, fontSize: { date: 36, time: 54 } },
+  5: { windowWidth: 500, windowHeight: 250, fontSize: { date: 40, time: 60 } }
+}; 

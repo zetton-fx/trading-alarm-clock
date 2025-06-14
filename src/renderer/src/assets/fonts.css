@@ -1,0 +1,451 @@
+/* DSEG フォントの読み込み */
+
+/* DSEG7 Classic */
+@font-face {
+  font-family: 'DSEG7Classic';
+  src: url('./fonts/DSEG7Classic-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7Classic';
+  src: url('./fonts/DSEG7Classic-LightItalic.woff2') format('woff2');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7Classic';
+  src: url('./fonts/DSEG7Classic-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7Classic';
+  src: url('./fonts/DSEG7Classic-Italic.woff2') format('woff2');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7Classic';
+  src: url('./fonts/DSEG7Classic-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7Classic';
+  src: url('./fonts/DSEG7Classic-BoldItalic.woff2') format('woff2');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* DSEG7 Classic Mini */
+@font-face {
+  font-family: 'DSEG7ClassicMini';
+  src: url('./fonts/DSEG7ClassicMini-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7ClassicMini';
+  src: url('./fonts/DSEG7ClassicMini-LightItalic.woff2') format('woff2');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7ClassicMini';
+  src: url('./fonts/DSEG7ClassicMini-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7ClassicMini';
+  src: url('./fonts/DSEG7ClassicMini-Italic.woff2') format('woff2');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7ClassicMini';
+  src: url('./fonts/DSEG7ClassicMini-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7ClassicMini';
+  src: url('./fonts/DSEG7ClassicMini-BoldItalic.woff2') format('woff2');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* DSEG7 Modern */
+@font-face {
+  font-family: 'DSEG7Modern';
+  src: url('./fonts/DSEG7Modern-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7Modern';
+  src: url('./fonts/DSEG7Modern-LightItalic.woff2') format('woff2');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7Modern';
+  src: url('./fonts/DSEG7Modern-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7Modern';
+  src: url('./fonts/DSEG7Modern-Italic.woff2') format('woff2');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7Modern';
+  src: url('./fonts/DSEG7Modern-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7Modern';
+  src: url('./fonts/DSEG7Modern-BoldItalic.woff2') format('woff2');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* DSEG7 Modern Mini */
+@font-face {
+  font-family: 'DSEG7ModernMini';
+  src: url('./fonts/DSEG7ModernMini-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7ModernMini';
+  src: url('./fonts/DSEG7ModernMini-LightItalic.woff2') format('woff2');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7ModernMini';
+  src: url('./fonts/DSEG7ModernMini-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7ModernMini';
+  src: url('./fonts/DSEG7ModernMini-Italic.woff2') format('woff2');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7ModernMini';
+  src: url('./fonts/DSEG7ModernMini-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7ModernMini';
+  src: url('./fonts/DSEG7ModernMini-BoldItalic.woff2') format('woff2');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* DSEG14 Classic */
+@font-face {
+  font-family: 'DSEG14Classic';
+  src: url('./fonts/DSEG14Classic-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14Classic';
+  src: url('./fonts/DSEG14Classic-LightItalic.woff2') format('woff2');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14Classic';
+  src: url('./fonts/DSEG14Classic-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14Classic';
+  src: url('./fonts/DSEG14Classic-Italic.woff2') format('woff2');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14Classic';
+  src: url('./fonts/DSEG14Classic-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14Classic';
+  src: url('./fonts/DSEG14Classic-BoldItalic.woff2') format('woff2');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* DSEG14 Classic Mini */
+@font-face {
+  font-family: 'DSEG14ClassicMini';
+  src: url('./fonts/DSEG14ClassicMini-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14ClassicMini';
+  src: url('./fonts/DSEG14ClassicMini-LightItalic.woff2') format('woff2');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14ClassicMini';
+  src: url('./fonts/DSEG14ClassicMini-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14ClassicMini';
+  src: url('./fonts/DSEG14ClassicMini-Italic.woff2') format('woff2');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14ClassicMini';
+  src: url('./fonts/DSEG14ClassicMini-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14ClassicMini';
+  src: url('./fonts/DSEG14ClassicMini-BoldItalic.woff2') format('woff2');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* DSEG14 Modern */
+@font-face {
+  font-family: 'DSEG14Modern';
+  src: url('./fonts/DSEG14Modern-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14Modern';
+  src: url('./fonts/DSEG14Modern-LightItalic.woff2') format('woff2');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14Modern';
+  src: url('./fonts/DSEG14Modern-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14Modern';
+  src: url('./fonts/DSEG14Modern-Italic.woff2') format('woff2');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14Modern';
+  src: url('./fonts/DSEG14Modern-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14Modern';
+  src: url('./fonts/DSEG14Modern-BoldItalic.woff2') format('woff2');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* DSEG14 Modern Mini */
+@font-face {
+  font-family: 'DSEG14ModernMini';
+  src: url('./fonts/DSEG14ModernMini-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14ModernMini';
+  src: url('./fonts/DSEG14ModernMini-LightItalic.woff2') format('woff2');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14ModernMini';
+  src: url('./fonts/DSEG14ModernMini-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14ModernMini';
+  src: url('./fonts/DSEG14ModernMini-Italic.woff2') format('woff2');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14ModernMini';
+  src: url('./fonts/DSEG14ModernMini-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG14ModernMini';
+  src: url('./fonts/DSEG14ModernMini-BoldItalic.woff2') format('woff2');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+
+
+/* フォントクラス */
+.font-dseg7-classic {
+  font-family: 'DSEG7Classic', 'Courier New', monospace;
+}
+
+.font-dseg7-classic-mini {
+  font-family: 'DSEG7ClassicMini', 'Courier New', monospace;
+}
+
+.font-dseg7-modern {
+  font-family: 'DSEG7Modern', 'Courier New', monospace;
+}
+
+.font-dseg7-modern-mini {
+  font-family: 'DSEG7ModernMini', 'Courier New', monospace;
+}
+
+.font-dseg14-classic {
+  font-family: 'DSEG14Classic', 'Courier New', monospace;
+}
+
+.font-dseg14-classic-mini {
+  font-family: 'DSEG14ClassicMini', 'Courier New', monospace;
+}
+
+.font-dseg14-modern {
+  font-family: 'DSEG14Modern', 'Courier New', monospace;
+}
+
+.font-dseg14-modern-mini {
+  font-family: 'DSEG14ModernMini', 'Courier New', monospace;
+}
+
+
+
+/* 後方互換性のため */
+.font-dseg7 {
+  font-family: 'DSEG7Classic', 'Courier New', monospace;
+}
+
+/* フォントウェイト用のクラス */
+.font-dseg7-light {
+  font-family: 'DSEG7Classic', 'Courier New', monospace;
+  font-weight: 300;
+}
+
+.font-dseg7-regular {
+  font-family: 'DSEG7Classic', 'Courier New', monospace;
+  font-weight: normal;
+}
+
+.font-dseg7-bold {
+  font-family: 'DSEG7Classic', 'Courier New', monospace;
+  font-weight: bold;
+} 
