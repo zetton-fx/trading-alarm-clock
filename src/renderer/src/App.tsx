@@ -157,10 +157,14 @@ function App() {
         />
 
         {/* 時計＋ボタン部分 */}
-        <div className="relative z-10 flex items-center justify-center h-full group">
+        <div 
+          className="relative z-10 flex items-center justify-center h-full group"
+          onMouseEnter={() => window.electronAPI?.expandWindowForButtons()}
+          onMouseLeave={() => window.electronAPI?.restoreWindowSize()}
+        >
           {/* 時計本体 */}
           <div className="relative text-center">
-            {/* ボタン：hover時に表示 - 時計の枠を基準に配置 */}
+            {/* ボタン：hover時に表示 - 時計の右上に配置（ウィンドウサイズが動的に調整される） */}
             <div className="absolute -top-2 -right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 no-drag z-30">
               {/* 設定ボタン */}
               <button

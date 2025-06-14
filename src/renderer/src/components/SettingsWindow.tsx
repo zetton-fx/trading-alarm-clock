@@ -128,11 +128,11 @@ const SettingsWindow: React.FC = () => {
                   fontSize: '14px'
                 }}
               >
-                <option value={1}>最小 (300x150)</option>
-                <option value={2}>小 (350x175)</option>
-                <option value={3}>中 (400x200)</option>
-                <option value={4}>大 (450x225)</option>
-                <option value={5}>最大 (500x250)</option>
+                <option value={1}>最小 (350x200)</option>
+                <option value={2}>小 (400x225)</option>
+                <option value={3}>中 (450x250)</option>
+                <option value={4}>大 (500x275)</option>
+                <option value={5}>最大 (550x300)</option>
               </select>
             </div>
 

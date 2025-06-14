@@ -52,6 +52,7 @@ async function createWindow(): Promise<void> {
     resizable: true,
     transparent: true,
     frame: false,
+    hasShadow: false,
     alwaysOnTop: settings.alwaysOnTop,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
