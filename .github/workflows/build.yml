@@ -23,15 +23,7 @@ jobs:
         cache: 'npm'
 
     - name: Install dependencies
-      shell: bash
-      run: |
-        if [ "${{ runner.os }}" == "macOS" ]; then
-          rm -rf node_modules
-          npm install
-          npm rebuild rollup
-        else
-          npm ci
-        fi
+      run: npm ci
 
     - name: Build
       run: npm run build
