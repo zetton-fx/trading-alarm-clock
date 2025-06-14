@@ -27,12 +27,12 @@
         "lightningcss-darwin-arm64": "1.23.0",
         "lightningcss-darwin-x64": "1.23.0",
         "lightningcss-linux-x64-gnu": "1.23.0",
-        "lightningcss-win32-x64-msvc": "1.23.0"
+        "lightningcss-win32-x64-msvc": "1.23.0",
+        "dmg-license": "1.0.11"
     },
     "devDependencies": {
         "@types/react": "^19.0.5",
         "@types/react-dom": "^19.0.3",
-        "dmg-license": "^1.0.11",
         "electron": "^36.4.0",
         "electron-builder": "^26.0.12",
         "electron-vite": "^3.1.0",
