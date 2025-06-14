@@ -1,12 +1,20 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import { AppSettings } from '../shared/types/settings'
 
 // プリロードスクリプト：セキュアな通信のために使用
-// 今回のデジタル時計アプリでは特別な通信は不要ですが、
-// 将来的な拡張のために基本的な構造を提供します
-
 contextBridge.exposeInMainWorld('electronAPI', {
-  // 必要に応じて、ここにメインプロセスとの通信用のAPIを追加
+  // 基本機能
   platform: process.platform,
   closeApp: () => ipcRenderer.send('app-close'),
-  openSettings: () => ipcRenderer.send('open-settings')
+  openSettings: () => ipcRenderer.send('open-settings'),
+  
+  // 設定関連
+  loadSettings: (): Promise<AppSettings> => ipcRenderer.invoke('load-settings'),
+  saveSettings: (settings: AppSettings): Promise<void> => ipcRenderer.invoke('save-settings', settings),
+  onSettingsUpdated: (callback: (settings: AppSettings) => void) => {
+    ipcRenderer.on('settings-updated', (_, settings) => callback(settings))
+  },
+  removeSettingsUpdatedListener: () => {
+    ipcRenderer.removeAllListeners('settings-updated')
+  }
 }) 
