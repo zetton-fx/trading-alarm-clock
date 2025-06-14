@@ -25,6 +25,10 @@ jobs:
     - name: Install dependencies
       shell: bash
       run: |
+        if [ "${{ runner.os }}" == "macOS" ]; then
+          rm -f package-lock.json
+          rm -rf node_modules
+        fi
         npm ci
         if [ "${{ runner.os }}" == "macOS" ]; then
           npm rebuild rollup
