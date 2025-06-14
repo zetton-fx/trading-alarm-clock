@@ -1,4 +1,4 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 
 // プリロードスクリプト：セキュアな通信のために使用
 // 今回のデジタル時計アプリでは特別な通信は不要ですが、
@@ -6,5 +6,7 @@ import { contextBridge } from 'electron'
 
 contextBridge.exposeInMainWorld('electronAPI', {
   // 必要に応じて、ここにメインプロセスとの通信用のAPIを追加
-  platform: process.platform
+  platform: process.platform,
+  closeApp: () => ipcRenderer.send('app-close'),
+  openSettings: () => ipcRenderer.send('open-settings')
 }) 

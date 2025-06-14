@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 
 function createWindow(): void {
@@ -35,6 +35,16 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  // IPCハンドラーの設定
+  ipcMain.on('app-close', () => {
+    mainWindow.close()
+  })
+
+  ipcMain.on('open-settings', () => {
+    // TODO: 設定ウィンドウを開く処理（後で実装）
+    console.log('設定ウィンドウを開くリクエストを受信')
+  })
 }
 
 // このメソッドは、Electronが初期化を終えて、ブラウザウィンドウを作成する準備ができたときに呼び出されます

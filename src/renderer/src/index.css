@@ -26,6 +26,11 @@ html, body {
 /* アプリをドラッグできるようにする */
 .drag-region {
   -webkit-app-region: drag;
+  cursor: move !important;
+}
+
+.drag-region:hover {
+  cursor: move !important;
 }
 
 /* ドラッグできない要素 (ボタンなど) */
