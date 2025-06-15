@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { AppSettings } from '../shared/types/settings'
+import { AlarmSettings } from '../shared/types/alarm'
 
 // プリロードスクリプト：セキュアな通信のために使用
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -21,5 +22,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   removeSettingsUpdatedListener: () => {
     ipcRenderer.removeAllListeners('settings-updated')
-  }
+  },
+  
+  // アラーム設定関連
+  loadAlarmSettings: (): Promise<AlarmSettings> => ipcRenderer.invoke('load-alarm-settings'),
+  saveAlarmSettings: (settings: AlarmSettings): Promise<void> => ipcRenderer.invoke('save-alarm-settings', settings)
 }) 

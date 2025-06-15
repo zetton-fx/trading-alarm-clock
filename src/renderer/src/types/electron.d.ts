@@ -1,4 +1,5 @@
 import { AppSettings } from '../../shared/types/settings'
+import { AlarmSettings } from '../../shared/types/alarm'
 
 export interface ElectronAPI {
   platform: string
@@ -7,6 +8,8 @@ export interface ElectronAPI {
   openAlarmWindow: () => void
   loadSettings: () => Promise<AppSettings>
   saveSettings: (settings: AppSettings) => Promise<void>
+  loadAlarmSettings: () => Promise<AlarmSettings>
+  saveAlarmSettings: (settings: AlarmSettings) => Promise<void>
   onSettingsUpdated: (callback: (settings: AppSettings) => void) => void
   removeSettingsUpdatedListener: () => void
   expandWindowForButtons: () => void
@@ -22,6 +25,8 @@ declare global {
       openAlarmWindow: () => void
       loadSettings: () => Promise<AppSettings>
       saveSettings: (settings: AppSettings) => Promise<void>
+      loadAlarmSettings: () => Promise<AlarmSettings>
+      saveAlarmSettings: (settings: AlarmSettings) => Promise<void>
       onSettingsUpdated: (callback: (settings: AppSettings) => void) => void
       removeSettingsUpdatedListener: () => void
       expandWindowForButtons: () => void

@@ -2,10 +2,16 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { promises as fs } from 'fs'
 import { AppSettings, defaultSettings, sizeMapping } from '../shared/types/settings'
+import { AlarmSettings, defaultAlarmSettings } from '../shared/types/alarm'
 
 // 設定ファイルのパス
 const getSettingsPath = (): string => {
   return join(app.getPath('userData'), 'settings.json')
+}
+
+// アラーム設定ファイルのパス
+const getAlarmSettingsPath = (): string => {
+  return join(app.getPath('userData'), 'alarms.json')
 }
 
 // 設定の読み込み
@@ -22,6 +28,20 @@ const loadSettings = async (): Promise<AppSettings> => {
   }
 }
 
+// アラーム設定の読み込み
+const loadAlarmSettings = async (): Promise<AlarmSettings> => {
+  try {
+    const alarmSettingsPath = getAlarmSettingsPath()
+    const data = await fs.readFile(alarmSettingsPath, 'utf-8')
+    const parsedSettings = JSON.parse(data)
+    // デフォルト設定とマージして、新しいプロパティがあっても対応
+    return { ...defaultAlarmSettings, ...parsedSettings }
+  } catch (error) {
+    console.log('アラーム設定ファイルが見つからないかエラーが発生しました。デフォルト設定を使用します:', error)
+    return defaultAlarmSettings
+  }
+}
+
 // 設定の保存
 const saveSettings = async (settings: AppSettings): Promise<void> => {
   try {
@@ -34,8 +54,21 @@ const saveSettings = async (settings: AppSettings): Promise<void> => {
   }
 }
 
+// アラーム設定の保存
+const saveAlarmSettings = async (settings: AlarmSettings): Promise<void> => {
+  try {
+    const alarmSettingsPath = getAlarmSettingsPath()
+    await fs.writeFile(alarmSettingsPath, JSON.stringify(settings, null, 2), 'utf-8')
+    console.log('アラーム設定を保存しました:', alarmSettingsPath)
+  } catch (error) {
+    console.error('アラーム設定の保存に失敗しました:', error)
+    throw error
+  }
+}
+
 let mainWindow: BrowserWindow
 let settingsWindow: BrowserWindow | null = null
+let alarmWindow: BrowserWindow | null = null
 
 async function createWindow(): Promise<void> {
   // 設定を読み込み
@@ -87,6 +120,10 @@ async function createWindow(): Promise<void> {
     createSettingsWindow()
   })
 
+  ipcMain.on('open-alarm-window', () => {
+    createAlarmWindow()
+  })
+
   // 設定の保存・読み込み
   ipcMain.handle('load-settings', async (): Promise<AppSettings> => {
     return await loadSettings()
@@ -116,6 +153,15 @@ async function createWindow(): Promise<void> {
     
     // メインウィンドウに設定変更を通知
     mainWindow.webContents.send('settings-updated', settings)
+  })
+
+  // アラーム設定の保存・読み込み
+  ipcMain.handle('load-alarm-settings', async (): Promise<AlarmSettings> => {
+    return await loadAlarmSettings()
+  })
+
+  ipcMain.handle('save-alarm-settings', async (_, settings: AlarmSettings): Promise<void> => {
+    await saveAlarmSettings(settings)
   })
 }
 
@@ -157,6 +203,47 @@ function createSettingsWindow(): void {
     settingsWindow.loadURL('http://localhost:5173/#settings')
   } else {
     settingsWindow.loadFile(join(__dirname, '../renderer/index.html'), { hash: 'settings' })
+  }
+}
+
+// アラームウィンドウを作成
+function createAlarmWindow(): void {
+  // 既にアラームウィンドウが開いている場合はフォーカスする
+  if (alarmWindow) {
+    alarmWindow.focus()
+    return
+  }
+
+  alarmWindow = new BrowserWindow({
+    width: 1000,
+    height: 800,
+    show: false,
+    autoHideMenuBar: true,
+    resizable: true,
+    parent: mainWindow,
+    modal: false,
+    title: 'アラーム管理',
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false,
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  })
+
+  alarmWindow.on('ready-to-show', () => {
+    alarmWindow?.show()
+  })
+
+  alarmWindow.on('closed', () => {
+    alarmWindow = null
+  })
+
+  // アラームウィンドウは同じアプリを読み込むが、URLフラグメントで区別
+  if (process.env.NODE_ENV === 'development') {
+    alarmWindow.loadURL('http://localhost:5173/#alarm')
+  } else {
+    alarmWindow.loadFile(join(__dirname, '../renderer/index.html'), { hash: 'alarm' })
   }
 }
 

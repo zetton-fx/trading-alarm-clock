@@ -1,16 +1,24 @@
 import React, { useEffect, useState } from 'react'
 import { useSettingsStore } from './store/settingsStore'
 import SettingsWindow from './components/SettingsWindow'
+import AlarmWindow from './components/AlarmWindow'
 import { sizeMapping } from '../../shared/types/settings'
 
 function App() {
-  // URLフラグメントを確認して設定ウィンドウかどうかを判定
+  // URLフラグメントを確認して設定ウィンドウかアラームウィンドウかどうかを判定
   const isSettingsWindow = window.location.hash === '#settings'
+  const isAlarmWindow = window.location.hash === '#alarm'
   
   // 設定ウィンドウの場合は設定コンポーネントのみを表示
   if (isSettingsWindow) {
     return <SettingsWindow />
   }
+  
+  // アラームウィンドウの場合はアラームコンポーネントのみを表示
+  if (isAlarmWindow) {
+    return <AlarmWindow />
+  }
+
   const [time, setTime] = useState('')
   const [date, setDate] = useState('')
   
