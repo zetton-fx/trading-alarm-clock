@@ -37,9 +37,41 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: trading-alarm-clock-${{ matrix.os }}
+        name: trading-alarm-clock-${{ matrix.os }}-${{ github.sha }}
         path: |
           release/*.exe
           release/*.dmg
           release/*.AppImage
-        if-no-files-found: error 
+        if-no-files-found: warn
+        retention-days: 30
+
+  comment-pr:
+    if: github.event_name == 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Comment PR with download links
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { owner, repo } = context.repo;
+          const prNumber = context.issue.number;
+          const runId = context.runId;
+          
+          const comment = `## ビルド完了！
+          
+          以下からバイナリをダウンロードできます：
+          
+          - [Windows版をダウンロード](https://github.com/${owner}/${repo}/actions/runs/${runId})
+          - [macOS版をダウンロード](https://github.com/${owner}/${repo}/actions/runs/${runId})
+          
+          Actions画面の「Artifacts」セクションからダウンロードしてください。
+          
+          > ※ アーティファクトは30日間保存されます`;
+          
+          github.rest.issues.createComment({
+            owner,
+            repo,
+            issue_number: prNumber,
+            body: comment
+          }); 
