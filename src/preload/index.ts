@@ -7,6 +7,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform,
   closeApp: () => ipcRenderer.send('app-close'),
   openSettings: () => ipcRenderer.send('open-settings'),
+  openAlarmWindow: () => ipcRenderer.send('open-alarm-window'),
+  
+  // ウィンドウサイズ調整
+  expandWindowForButtons: () => ipcRenderer.send('expand-window-for-buttons'),
+  restoreWindowSize: () => ipcRenderer.send('restore-window-size'),
   
   // 設定関連
   loadSettings: (): Promise<AppSettings> => ipcRenderer.invoke('load-settings'),

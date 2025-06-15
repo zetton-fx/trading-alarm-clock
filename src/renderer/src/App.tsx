@@ -63,6 +63,14 @@ function App() {
     window.electronAPI?.openSettings()
     console.log('electronAPI.openSettings()を呼び出しました')
   }
+  
+  const handleAddAlarm = () => {
+    console.log('アラーム追加ボタンがクリックされました')
+    // TODO: アラーム追加ウィンドウを開く処理を実装
+    window.electronAPI?.openAlarmWindow()
+    console.log('electronAPI.openAlarmWindow()を呼び出しました')
+  }
+  
   const handleClose = () => window.electronAPI?.closeApp()
 
   // 設定に基づくスタイルを生成
@@ -189,6 +197,19 @@ function App() {
               >
                 <svg className="w-6 h-6 block" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+                </svg>
+              </button>
+            </div>
+
+            {/* アラーム追加ボタン：hover時に表示 - 時計の中央下に配置 */}
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300 no-drag z-30">
+              <button
+                onClick={handleAddAlarm}
+                className="w-16 h-16 flex items-center justify-center bg-green-600 hover:bg-green-500 text-white rounded-full shadow-lg transition-colors duration-200"
+                title="アラーム追加"
+              >
+                <svg className="w-10 h-10 block" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
                 </svg>
               </button>
             </div>
