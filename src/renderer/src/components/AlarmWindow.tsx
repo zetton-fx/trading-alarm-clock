@@ -20,6 +20,7 @@ function AlarmWindow() {
   const [newAlarmHour, setNewAlarmHour] = useState(12)
   const [newAlarmMinute, setNewAlarmMinute] = useState(0)
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null)
+  const [currentAudioType, setCurrentAudioType] = useState<'alarm' | 'preAlarm' | null>(null)
 
   useEffect(() => {
     loadAlarmSettings()
@@ -31,11 +32,12 @@ function AlarmWindow() {
       currentAudio.pause()
       currentAudio.currentTime = 0
       setCurrentAudio(null)
+      setCurrentAudioType(null)
     }
   }
 
   // 音声プレビュー再生
-  const playSound = async (soundFile: string, volume: number) => {
+  const playSound = async (soundFile: string, volume: number, audioType: 'alarm' | 'preAlarm') => {
     stopCurrentAudio() // 現在再生中の音声を停止
     
     try {
@@ -53,10 +55,12 @@ function AlarmWindow() {
       audio.volume = volume / 100
       audio.play()
       setCurrentAudio(audio)
+      setCurrentAudioType(audioType)
       
       // 再生終了時にstateをクリア
       audio.addEventListener('ended', () => {
         setCurrentAudio(null)
+        setCurrentAudioType(null)
       })
     } catch (error) {
       console.error('音声ファイルの再生に失敗しました:', error)
@@ -102,7 +106,15 @@ function AlarmWindow() {
   const sortedAlarms = getSortedAlarms()
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div 
+      className="min-h-screen bg-gray-100 p-6"
+      onClick={(e) => {
+        // ボタン以外をクリックした場合は音声を停止
+        if (currentAudio && !(e.target as HTMLElement).closest('button')) {
+          stopCurrentAudio()
+        }
+      }}
+    >
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">アラーム管理</h1>
 
@@ -267,14 +279,26 @@ function AlarmWindow() {
                   ))}
                 </select>
                 <button
-                  onClick={() => playSound(settings.globalAlarmSound, settings.globalVolume)}
-                  className="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors flex items-center gap-1"
-                  title="音を確認"
+                  onClick={() => {
+                    if (currentAudio && currentAudioType === 'alarm') {
+                      stopCurrentAudio()
+                    } else {
+                      playSound(settings.globalAlarmSound, settings.globalVolume, 'alarm')
+                    }
+                  }}
+                  className={`px-3 py-2 ${currentAudio && currentAudioType === 'alarm' ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} text-white rounded-md transition-colors flex items-center gap-1`}
+                  title={currentAudio && currentAudioType === 'alarm' ? "音を停止" : "音を確認"}
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8,5.14V19.14L19,12.14L8,5.14Z" />
-                  </svg>
-                  確認
+                  {currentAudio && currentAudioType === 'alarm' ? (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6,6H18V18H6V6Z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8,5.14V19.14L19,12.14L8,5.14Z" />
+                    </svg>
+                  )}
+                  {currentAudio && currentAudioType === 'alarm' ? '停止' : '確認'}
                 </button>
               </div>
             </div>
@@ -354,15 +378,39 @@ function AlarmWindow() {
                   ))}
                 </select>
                 <button
-                  onClick={() => playSound(settings.globalPreAlarmSound, settings.globalPreAlarmVolume)}
+                  onClick={() => {
+                    if (currentAudio && currentAudioType === 'preAlarm') {
+                      stopCurrentAudio()
+                    } else {
+                      playSound(settings.globalPreAlarmSound, settings.globalPreAlarmVolume, 'preAlarm')
+                    }
+                  }}
                   disabled={!settings.globalPreAlarmEnabled}
-                  className="px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-md transition-colors flex items-center gap-1"
-                  title="音を確認"
+                  className={`px-3 py-2 ${
+                    !settings.globalPreAlarmEnabled 
+                      ? 'bg-gray-300' 
+                      : (currentAudio && currentAudioType === 'preAlarm')
+                        ? 'bg-red-500 hover:bg-red-600' 
+                        : 'bg-blue-500 hover:bg-blue-600'
+                  } text-white rounded-md transition-colors flex items-center gap-1`}
+                  title={
+                    !settings.globalPreAlarmEnabled 
+                      ? "先行アラームが無効です" 
+                      : (currentAudio && currentAudioType === 'preAlarm')
+                        ? "音を停止" 
+                        : "音を確認"
+                  }
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8,5.14V19.14L19,12.14L8,5.14Z" />
-                  </svg>
-                  確認
+                  {(currentAudio && currentAudioType === 'preAlarm') ? (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6,6H18V18H6V6Z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8,5.14V19.14L19,12.14L8,5.14Z" />
+                    </svg>
+                  )}
+                  {(currentAudio && currentAudioType === 'preAlarm') ? '停止' : '確認'}
                 </button>
               </div>
             </div>
