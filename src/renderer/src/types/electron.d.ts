@@ -14,6 +14,7 @@ export interface ElectronAPI {
   removeSettingsUpdatedListener: () => void
   expandWindowForButtons: () => void
   restoreWindowSize: () => void
+  getAssetPath: (assetPath: string) => Promise<string>
 }
 
 declare global {
@@ -31,6 +32,7 @@ declare global {
       removeSettingsUpdatedListener: () => void
       expandWindowForButtons: () => void
       restoreWindowSize: () => void
+      getAssetPath: (assetPath: string) => Promise<string>
     }
   }
 } 

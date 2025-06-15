@@ -163,6 +163,15 @@ async function createWindow(): Promise<void> {
   ipcMain.handle('save-alarm-settings', async (_, settings: AlarmSettings): Promise<void> => {
     await saveAlarmSettings(settings)
   })
+
+  // アセットファイルのパスを取得
+  ipcMain.handle('get-asset-path', (_, assetPath: string): string => {
+    if (process.env.NODE_ENV === 'development') {
+      return join(__dirname, '../../src/assets', assetPath)
+    } else {
+      return join(process.resourcesPath, 'assets', assetPath)
+    }
+  })
 }
 
 // 設定ウィンドウを作成

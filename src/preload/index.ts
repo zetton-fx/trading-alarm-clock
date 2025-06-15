@@ -26,5 +26,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // アラーム設定関連
   loadAlarmSettings: (): Promise<AlarmSettings> => ipcRenderer.invoke('load-alarm-settings'),
-  saveAlarmSettings: (settings: AlarmSettings): Promise<void> => ipcRenderer.invoke('save-alarm-settings', settings)
+  saveAlarmSettings: (settings: AlarmSettings): Promise<void> => ipcRenderer.invoke('save-alarm-settings', settings),
+  
+  // アセットファイル関連
+  getAssetPath: (assetPath: string): Promise<string> => ipcRenderer.invoke('get-asset-path', assetPath)
 }) 

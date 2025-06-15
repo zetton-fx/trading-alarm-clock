@@ -35,11 +35,21 @@ function AlarmWindow() {
   }
 
   // 音声プレビュー再生
-  const playSound = (soundFile: string, volume: number) => {
+  const playSound = async (soundFile: string, volume: number) => {
     stopCurrentAudio() // 現在再生中の音声を停止
     
     try {
-      const audio = new Audio(`/src/assets/sounds/${soundFile}`)
+      let audioUrl: string
+      
+      // 開発時はViteの開発サーバーから、本番時はfile://プロトコルを使用
+      if (window.location.hostname === 'localhost') {
+        audioUrl = `/sounds/${soundFile}`
+      } else {
+        const assetPath = await window.electronAPI.getAssetPath(`sounds/${soundFile}`)
+        audioUrl = `file://${assetPath}`
+      }
+      
+      const audio = new Audio(audioUrl)
       audio.volume = volume / 100
       audio.play()
       setCurrentAudio(audio)
