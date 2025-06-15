@@ -166,11 +166,32 @@ async function createWindow(): Promise<void> {
 
   // アセットファイルのパスを取得
   ipcMain.handle('get-asset-path', (_, assetPath: string): string => {
+    const path = require('path')
+    const fs = require('fs')
+    
+    let fullPath: string
     if (process.env.NODE_ENV === 'development') {
-      return join(__dirname, '../../src/assets', assetPath)
+      fullPath = path.join(__dirname, '../../src/assets', assetPath)
     } else {
-      return join(process.resourcesPath, 'assets', assetPath)
+      fullPath = path.join(process.resourcesPath, 'assets', assetPath)
     }
+    
+    console.log('要求されたアセットパス:', assetPath)
+    console.log('解決されたフルパス:', fullPath)
+    console.log('ファイルが存在するか:', fs.existsSync(fullPath))
+    
+    if (!fs.existsSync(fullPath)) {
+      console.error('アセットファイルが見つかりません:', fullPath)
+      // 代替パスを試してみる
+      const alternativePath = path.join(process.resourcesPath, 'app.asar.unpacked', 'src', 'assets', assetPath)
+      console.log('代替パスを試行:', alternativePath)
+      if (fs.existsSync(alternativePath)) {
+        console.log('代替パスでファイルを発見')
+        return alternativePath
+      }
+    }
+    
+    return fullPath
   })
 }
 

@@ -46,24 +46,44 @@ function AlarmWindow() {
       // 開発時はViteの開発サーバーから、本番時はfile://プロトコルを使用
       if (window.location.hostname === 'localhost') {
         audioUrl = `/sounds/${soundFile}`
+        console.log('開発環境 - 音声URL:', audioUrl)
       } else {
         const assetPath = await window.electronAPI.getAssetPath(`sounds/${soundFile}`)
-        audioUrl = `file://${assetPath}`
+        audioUrl = `file:///${assetPath.replace(/\\/g, '/')}`
+        console.log('本番環境 - アセットパス:', assetPath)
+        console.log('本番環境 - 音声URL:', audioUrl)
       }
       
       const audio = new Audio(audioUrl)
       audio.volume = volume / 100
-      audio.play()
-      setCurrentAudio(audio)
-      setCurrentAudioType(audioType)
+      
+      // 音声読み込み失敗時のイベント
+      audio.addEventListener('error', (e) => {
+        console.error('音声ファイルの読み込みエラー:', e)
+        console.error('音声URL:', audioUrl)
+      })
       
       // 再生終了時にstateをクリア
       audio.addEventListener('ended', () => {
         setCurrentAudio(null)
         setCurrentAudioType(null)
       })
+      
+      // 再生開始前にstateを設定
+      setCurrentAudio(audio)
+      setCurrentAudioType(audioType)
+      console.log('ボタン状態を更新:', audioType)
+      
+      await audio.play()
+      console.log('音声再生開始:', audioUrl)
+      
     } catch (error) {
       console.error('音声ファイルの再生に失敗しました:', error)
+      console.error('soundFile:', soundFile)
+      console.error('audioType:', audioType)
+      // エラー時はstateをリセット
+      setCurrentAudio(null)
+      setCurrentAudioType(null)
     }
   }
 
