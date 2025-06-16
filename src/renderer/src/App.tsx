@@ -62,7 +62,7 @@ function App() {
       )
     }
     update()
-    const timer = setInterval(update, 1000)
+    const timer = setInterval(update, 100)
     return () => clearInterval(timer)
   }, [settings.displayFormat])
 
