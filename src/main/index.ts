@@ -201,28 +201,36 @@ async function createWindow(): Promise<void> {
 
   ipcMain.handle('save-settings', async (_, settings: AppSettings): Promise<void> => {
     await saveSettings(settings)
-    // 設定変更時にウィンドウサイズを更新
-    const { windowWidth, windowHeight } = sizeMapping[settings.size]
-    console.log(`ウィンドウサイズを変更: ${windowWidth}x${windowHeight} (サイズ設定: ${settings.size})`)
     
-    // 現在のサイズを取得してログ出力
+    // 現在のサイズを取得
     const currentSize = mainWindow.getSize()
-    console.log(`変更前のウィンドウサイズ: ${currentSize[0]}x${currentSize[1]}`)
+    const { windowWidth, windowHeight } = sizeMapping[settings.size]
     
-    // ウィンドウサイズを変更
-    mainWindow.setSize(windowWidth, windowHeight)
+    // サイズが実際に変更された場合のみsetSize()を実行
+    const sizeChanged = currentSize[0] !== windowWidth || currentSize[1] !== windowHeight
     
-    // ウィンドウを中央に配置
-    mainWindow.center()
+    if (sizeChanged) {
+      console.log(`ウィンドウサイズを変更: ${windowWidth}x${windowHeight} (サイズ設定: ${settings.size})`)
+      console.log(`変更前のウィンドウサイズ: ${currentSize[0]}x${currentSize[1]}`)
+      
+      // ウィンドウサイズを変更
+      mainWindow.setSize(windowWidth, windowHeight)
+      
+      // ウィンドウを中央に配置
+      mainWindow.center()
+      
+      // 変更後のサイズを確認
+      const newSize = mainWindow.getSize()
+      console.log(`変更後のウィンドウサイズ: ${newSize[0]}x${newSize[1]}`)
+      
+      // サイズ変更時のみWindows特有の設定を再適用
+      applyWindowsTitleBarHiding(mainWindow, 100)
+    } else {
+      console.log('ウィンドウサイズは変更されませんでした')
+    }
     
+    // alwaysOnTop設定は常に適用
     mainWindow.setAlwaysOnTop(settings.alwaysOnTop)
-    
-    // Windows特有の設定を再適用（設定変更時にタイトルバーが表示される問題を防ぐ）
-    applyWindowsTitleBarHiding(mainWindow, 100)
-    
-    // 変更後のサイズを確認
-    const newSize = mainWindow.getSize()
-    console.log(`変更後のウィンドウサイズ: ${newSize[0]}x${newSize[1]}`)
     
     // メインウィンドウに設定変更を通知
     mainWindow.webContents.send('settings-updated', settings)
