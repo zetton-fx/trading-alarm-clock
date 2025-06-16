@@ -22,6 +22,9 @@ function AlarmWindow() {
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null)
   const [currentAudioType, setCurrentAudioType] = useState<'alarm' | 'preAlarm' | null>(null)
   const [editingAlarmId, setEditingAlarmId] = useState<string | null>(null)
+  const [showBulkImport, setShowBulkImport] = useState(false)
+  const [bulkImportText, setBulkImportText] = useState('')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   useEffect(() => {
     loadAlarmSettings()
@@ -129,7 +132,16 @@ function AlarmWindow() {
     setNewAlarmName(alarm.name)
     setNewAlarmHour(alarm.hour)
     setNewAlarmMinute(alarm.minute)
-    setShowAddForm(true)
+    // その場編集なのでフォームは表示しない
+    // setShowAddForm(true)
+    
+    // 自動スクロールも不要
+    // setTimeout(() => {
+    //   const formElement = document.querySelector('.alarm-add-form')
+    //   if (formElement) {
+    //     formElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    //   }
+    // }, 100)
   }
 
   const handleSaveEdit = () => {
@@ -144,7 +156,8 @@ function AlarmWindow() {
       setNewAlarmName('')
       setNewAlarmHour(12)
       setNewAlarmMinute(0)
-      setShowAddForm(false)
+      // その場編集なのでフォームは閉じない
+      // setShowAddForm(false)
     }
   }
 
@@ -153,18 +166,70 @@ function AlarmWindow() {
     setNewAlarmName('')
     setNewAlarmHour(12)
     setNewAlarmMinute(0)
-    setShowAddForm(false)
+    // その場編集なのでフォームは閉じない
+    // setShowAddForm(false)
   }
 
   const handleDeleteAllAlarms = () => {
     if (sortedAlarms.length === 0) return
-    
-    const confirmed = window.confirm(
-      `登録されている${sortedAlarms.length}個のアラームを全て削除しますか？\n\nこの操作は取り消せません。`
+    setShowDeleteConfirm(true)
+  }
+
+  const handleConfirmDelete = () => {
+    deleteAllAlarms()
+    setShowDeleteConfirm(false)
+  }
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false)
+  }
+
+  const handleBulkImport = () => {
+    if (!bulkImportText.trim()) return
+
+    // 時刻パターンを抽出する正規表現
+    // HH:MM または HH:MM形式を検索
+    const timePattern = /(\d{1,2}):(\d{2})/g
+    const matches = []
+    let match
+
+    while ((match = timePattern.exec(bulkImportText)) !== null) {
+      const hour = parseInt(match[1])
+      const minute = parseInt(match[2])
+      
+      // 有効な時刻かチェック
+      if (hour >= 0 && hour <= 26 && minute >= 0 && minute <= 59) {
+        // 26:00のような場合は翌日の2:00として扱う
+        const adjustedHour = hour >= 24 ? hour - 24 : hour
+        matches.push({ hour: adjustedHour, minute })
+      }
+    }
+
+    // 重複を除去
+    const uniqueTimes = matches.filter((time, index, self) => 
+      index === self.findIndex(t => t.hour === time.hour && t.minute === time.minute)
     )
+
+    // アラームを追加
+    uniqueTimes.forEach(time => {
+      const alarmName = `${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`
+      addAlarm({
+        name: alarmName,
+        hour: time.hour,
+        minute: time.minute,
+        enabled: true,
+        preAlarmEnabled: false
+      })
+    })
+
+    // モーダルを閉じる
+    setShowBulkImport(false)
+    setBulkImportText('')
     
-    if (confirmed) {
-      deleteAllAlarms()
+    if (uniqueTimes.length > 0) {
+      alert(`${uniqueTimes.length}個のアラームを登録しました。`)
+    } else {
+      alert('有効な時刻が見つかりませんでした。')
     }
   }
 
@@ -193,13 +258,32 @@ function AlarmWindow() {
           {/* アラーム一覧 */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-700">アラーム一覧</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-gray-700">アラーム一覧</h2>
+                <span className="relative group">
+                  <span className="text-sm text-gray-500 cursor-help border-b border-dotted border-gray-400">
+                    (朝6時から順に表示)
+                  </span>
+                  <div className="absolute top-full left-0 mt-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-0 pointer-events-none w-64 z-10">
+                    FXの1日は早朝から始まるため、<br />
+                    見やすさを考慮して朝6時から順に表示しています。<br />
+                    深夜のアラーム（0-5時）は一番下に表示されます。
+                    <div className="absolute bottom-full left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-800"></div>
+                  </div>
+                </span>
+              </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowAddForm(!showAddForm)}
                   className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
                 >
                   アラーム追加
+                </button>
+                <button
+                  onClick={() => setShowBulkImport(true)}
+                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors"
+                >
+                  一括登録
                 </button>
                 <button
                   onClick={handleDeleteAllAlarms}
@@ -213,7 +297,12 @@ function AlarmWindow() {
 
             {/* アラーム追加フォーム */}
             {showAddForm && (
-              <div className="bg-gray-50 p-4 rounded-md mb-4">
+              <div className={`alarm-add-form p-4 rounded-md mb-4 ${editingAlarmId ? 'bg-blue-50 border-2 border-blue-200' : 'bg-gray-50'}`}>
+                {editingAlarmId && (
+                  <div className="mb-3 p-2 bg-blue-100 rounded text-blue-800 text-sm font-medium">
+                    アラーム編集中: {formatTime(newAlarmHour, newAlarmMinute)}
+                  </div>
+                )}
                 <div className="flex gap-2 items-end mb-4">
                   <div className="w-1/5">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -285,49 +374,112 @@ function AlarmWindow() {
                 sortedAlarms.map((alarm) => (
                   <div
                     key={alarm.id}
-                    className="flex items-center gap-4 p-4 border border-gray-200 rounded-md hover:bg-gray-50"
+                    className={`flex items-center gap-4 p-4 border rounded-md transition-colors ${
+                      editingAlarmId === alarm.id 
+                        ? 'border-blue-300 bg-blue-50' 
+                        : 'border-gray-200 hover:bg-gray-50'
+                    }`}
                   >
-                    <div 
-                      className="text-2xl font-mono font-bold text-blue-600 cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors min-w-[80px]"
-                      onClick={() => handleStartEdit(alarm)}
-                      title="クリックして編集"
-                    >
-                      {formatTime(alarm.hour, alarm.minute)}
-                    </div>
-                    <div className="flex-1">
-                      <span className="text-gray-800 font-medium">{alarm.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={alarm.preAlarmEnabled}
-                          onChange={(e) => handleTogglePreAlarm(alarm.id, e.target.checked)}
-                          className="w-4 h-4"
-                        />
-                        先行アラーム
-                      </label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={alarm.enabled}
-                          onChange={(e) => handleToggleAlarm(alarm.id, e.target.checked)}
-                          className="w-4 h-4"
-                        />
-                        アラーム
-                      </label>
-                    </div>
-                    <button
-                      onClick={() => deleteAlarm(alarm.id)}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-md transition-colors"
-                      title="削除"
-                    >
-                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
-                      </svg>
-                    </button>
+                    {editingAlarmId === alarm.id ? (
+                      // 編集モード：その場でフォーム表示
+                      <>
+                        <div className="flex gap-2 items-center min-w-[200px]">
+                          <select
+                            value={newAlarmHour}
+                            onChange={(e) => setNewAlarmHour(parseInt(e.target.value))}
+                            className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          >
+                            {Array.from({ length: 24 }, (_, i) => (
+                              <option key={i} value={i}>
+                                {String(i).padStart(2, '0')}
+                              </option>
+                            ))}
+                          </select>
+                          <span className="text-lg font-mono">:</span>
+                          <select
+                            value={newAlarmMinute}
+                            onChange={(e) => setNewAlarmMinute(parseInt(e.target.value))}
+                            className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          >
+                            {Array.from({ length: 60 }, (_, i) => (
+                              <option key={i} value={i}>
+                                {String(i).padStart(2, '0')}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            value={newAlarmName}
+                            onChange={(e) => setNewAlarmName(e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="アラーム名を入力"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={handleSaveEdit}
+                            className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition-colors"
+                            title="保存"
+                          >
+                            保存
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded transition-colors"
+                            title="キャンセル"
+                          >
+                            キャンセル
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      // 通常モード：表示のみ
+                      <>
+                        <div 
+                          className="text-2xl font-mono font-bold text-blue-600 cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors min-w-[80px]"
+                          onClick={() => handleStartEdit(alarm)}
+                          title="クリックして編集"
+                        >
+                          {formatTime(alarm.hour, alarm.minute)}
+                        </div>
+                        <div className="flex-1">
+                          <span className="text-gray-800 font-medium">{alarm.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="flex items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={alarm.preAlarmEnabled}
+                              onChange={(e) => handleTogglePreAlarm(alarm.id, e.target.checked)}
+                              className="w-4 h-4"
+                            />
+                            先行アラーム
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="flex items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={alarm.enabled}
+                              onChange={(e) => handleToggleAlarm(alarm.id, e.target.checked)}
+                              className="w-4 h-4"
+                            />
+                            アラーム
+                          </label>
+                        </div>
+                        <button
+                          onClick={() => deleteAlarm(alarm.id)}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                          title="削除"
+                        >
+                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
                   </div>
                 ))
               )}
@@ -511,6 +663,92 @@ function AlarmWindow() {
           </div>
         </div>
       </div>
+
+      {/* 一括登録モーダル */}
+      {showBulkImport && (
+        <div className="fixed inset-0 bg-gray-100 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-11/12 max-w-4xl h-[85vh] flex flex-col">
+            <div className="p-6 border-b border-gray-200 flex-shrink-0">
+              <h2 className="text-2xl font-semibold text-gray-800">アラーム一括登録</h2>
+              <p className="text-gray-600 mt-2">
+                経済指標サイトなどからコピーしたテキストを貼り付けてください。<strong>時刻のみ</strong>を自動抽出します。タイトルや説明文は抽出されません。
+              </p>
+            </div>
+            
+            <div className="flex-1 p-6 overflow-hidden flex flex-col min-h-0">
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex-shrink-0">
+                テキストを貼り付け
+              </label>
+              <textarea
+                value={bulkImportText}
+                onChange={(e) => setBulkImportText(e.target.value)}
+                className="flex-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[300px]"
+                placeholder="例：&#10;08:01 英国 英)ライトムーブ住宅価格&#10;11:00 中国 中)鉱工業生産&#10;15:30 スイス ス)生産者輸入価格&#10;21:30 米国 米)NY連銀製造業景気指数&#10;&#10;上記のようなテキストから時刻のみを自動抽出します。"
+              />
+              
+              <div className="mt-4 text-sm text-gray-500 flex-shrink-0">
+                <p>• 時刻は HH:MM 形式で認識されます（例：08:01, 21:30）</p>
+                <p>• 26:00のような翌日表記も対応しています（02:00として登録）</p>
+                <p>• 重複する時刻は自動で除去されます</p>
+              </div>
+            </div>
+            
+            <div className="p-6 border-t border-gray-200 flex justify-end gap-3 flex-shrink-0">
+              <button
+                onClick={() => {
+                  setShowBulkImport(false)
+                  setBulkImportText('')
+                }}
+                className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleBulkImport}
+                className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors"
+                disabled={!bulkImportText.trim()}
+              >
+                一括登録
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 削除確認ダイアログ */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-gray-100 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-96 max-w-[90vw] flex flex-col">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-800">確認</h2>
+            </div>
+            
+            <div className="p-6">
+              <p className="text-gray-700">
+                登録されている{sortedAlarms.length}個のアラームを全て削除しますか？
+              </p>
+              <p className="text-red-600 text-sm mt-2 font-medium">
+                この操作は取り消せません。
+              </p>
+            </div>
+            
+            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+              <button
+                onClick={handleCancelDelete}
+                className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
+              >
+                削除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
