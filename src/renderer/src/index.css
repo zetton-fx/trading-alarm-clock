@@ -12,6 +12,29 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Windows用タイトルバー完全非表示 */
+html {
+  --titlebar-height: 0px;
+}
+
+body {
+  padding-top: var(--titlebar-height, 0px);
+}
+
+/* Windows特有のタイトルバー非表示 */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Electronのタイトルバー関連要素を非表示 */
+.titlebar,
+.window-controls-overlay,
+[data-titlebar] {
+  display: none !important;
+  height: 0 !important;
+  visibility: hidden !important;
+}
+
 #root {
   height: 100vh;
 }

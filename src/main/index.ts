@@ -76,12 +76,11 @@ async function createWindow(): Promise<void> {
   const { windowWidth, windowHeight } = sizeMapping[settings.size]
 
   // メインウィンドウを作成
-  mainWindow = new BrowserWindow({
+  const windowOptions: Electron.BrowserWindowConstructorOptions = {
     width: windowWidth,
     height: windowHeight,
     show: false,
     autoHideMenuBar: true,
-    titleBarStyle: 'hidden',
     resizable: true,
     transparent: true,
     frame: false,
@@ -93,7 +92,53 @@ async function createWindow(): Promise<void> {
       contextIsolation: true,
       nodeIntegration: false
     }
-  })
+  }
+
+  // Windows特有の設定
+  if (process.platform === 'win32') {
+    windowOptions.titleBarStyle = 'hidden'
+    windowOptions.titleBarOverlay = false
+    // Windows でのタイトルバー完全非表示
+    windowOptions.frame = false
+    windowOptions.transparent = true
+    // Windows特有の追加設定
+    windowOptions.skipTaskbar = false
+    windowOptions.minimizable = true
+    windowOptions.maximizable = false
+    windowOptions.closable = true
+  } else {
+    windowOptions.titleBarStyle = 'hiddenInset'
+  }
+
+  mainWindow = new BrowserWindow(windowOptions)
+
+  // Windows でのタイトルバー非表示を確実にする
+  if (process.platform === 'win32') {
+    mainWindow.setMenuBarVisibility(false)
+    mainWindow.setAutoHideMenuBar(true)
+    
+    // ウィンドウが表示される前に設定を強制適用
+    mainWindow.webContents.once('dom-ready', () => {
+      mainWindow.webContents.executeJavaScript(`
+        // Windows用のタイトルバー完全非表示
+        document.documentElement.style.setProperty('--titlebar-height', '0px');
+        document.body.style.paddingTop = '0px';
+        
+        // タイトルバー関連要素を強制非表示
+        const titlebarElements = document.querySelectorAll('.titlebar, .window-controls-overlay, [data-titlebar]');
+        titlebarElements.forEach(el => {
+          el.style.display = 'none';
+          el.style.height = '0px';
+          el.style.visibility = 'hidden';
+        });
+      `)
+    })
+    
+    // ウィンドウフォーカス時にも設定を再適用
+    mainWindow.on('focus', () => {
+      mainWindow.setMenuBarVisibility(false)
+    })
+  }
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
