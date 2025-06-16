@@ -160,7 +160,7 @@ async function createWindow(): Promise<void> {
     height: windowHeight,
     show: false,
     autoHideMenuBar: true,
-    resizable: true,
+    resizable: false,
     transparent: true,
     frame: false,
     hasShadow: false,
