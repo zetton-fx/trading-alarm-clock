@@ -205,10 +205,12 @@ function createSettingsWindow(): void {
 
   settingsWindow = new BrowserWindow({
     width: 700,
-    height: 900,
+    height: 800,
+    minWidth: 600,
+    minHeight: 500,
     show: false,
     autoHideMenuBar: true,
-    resizable: false,
+    resizable: true,
     parent: mainWindow,
     modal: true,
     title: '設定',

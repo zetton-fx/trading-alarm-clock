@@ -52,15 +52,19 @@ const SettingsWindow: React.FC = () => {
   return (
     <div style={{ 
       width: '100%', 
-      height: '900px', 
+      height: '100vh', 
       backgroundColor: 'white',
-      padding: '20px',
       overflow: 'hidden',
       fontFamily: 'system-ui, -apple-system, sans-serif',
       display: 'flex',
       flexDirection: 'column'
     }}>
-      <div style={{ flex: 1, overflow: 'auto', paddingBottom: '20px' }}>
+      <div style={{ 
+        flex: 1, 
+        overflow: 'auto',
+        padding: '20px',
+        paddingBottom: '10px'
+      }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
           {/* ヘッダー */}
           <div style={{ 
@@ -77,19 +81,6 @@ const SettingsWindow: React.FC = () => {
             }}>
               設定
             </h1>
-            <button
-              onClick={handleClose}
-              style={{
-                fontSize: '24px',
-                color: '#6b7280',
-                border: 'none',
-                background: 'none',
-                cursor: 'pointer',
-                padding: '4px'
-              }}
-            >
-              ×
-            </button>
           </div>
 
           {/* 表示設定 */}
@@ -486,12 +477,11 @@ const SettingsWindow: React.FC = () => {
 
       {/* ボタン - 一番下に固定 */}
       <div style={{ 
-        paddingTop: '16px',
-        paddingBottom: '0px',
+        padding: '16px 20px 20px 20px',
         borderTop: '1px solid #e5e7eb',
         backgroundColor: 'white',
-        minHeight: '10px',
-        flexShrink: 0
+        flexShrink: 0,
+        boxShadow: '0 -1px 3px 0 rgba(0, 0, 0, 0.1)'
       }}>
         <div style={{ 
           maxWidth: '600px', 
