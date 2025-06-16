@@ -21,6 +21,7 @@ function AlarmWindow() {
   const [newAlarmMinute, setNewAlarmMinute] = useState(0)
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null)
   const [currentAudioType, setCurrentAudioType] = useState<'alarm' | 'preAlarm' | null>(null)
+  const [editingAlarmId, setEditingAlarmId] = useState<string | null>(null)
 
   useEffect(() => {
     loadAlarmSettings()
@@ -123,6 +124,38 @@ function AlarmWindow() {
     updateAlarm(id, { preAlarmEnabled })
   }
 
+  const handleStartEdit = (alarm: AlarmItem) => {
+    setEditingAlarmId(alarm.id)
+    setNewAlarmName(alarm.name)
+    setNewAlarmHour(alarm.hour)
+    setNewAlarmMinute(alarm.minute)
+    setShowAddForm(true)
+  }
+
+  const handleSaveEdit = () => {
+    if (editingAlarmId) {
+      const alarmName = newAlarmName.trim() || `${String(newAlarmHour).padStart(2, '0')}:${String(newAlarmMinute).padStart(2, '0')}`
+      updateAlarm(editingAlarmId, { 
+        name: alarmName,
+        hour: newAlarmHour, 
+        minute: newAlarmMinute 
+      })
+      setEditingAlarmId(null)
+      setNewAlarmName('')
+      setNewAlarmHour(12)
+      setNewAlarmMinute(0)
+      setShowAddForm(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingAlarmId(null)
+    setNewAlarmName('')
+    setNewAlarmHour(12)
+    setNewAlarmMinute(0)
+    setShowAddForm(false)
+  }
+
   const sortedAlarms = getSortedAlarms()
 
   return (
@@ -169,15 +202,15 @@ function AlarmWindow() {
             {/* アラーム追加フォーム */}
             {showAddForm && (
               <div className="bg-gray-50 p-4 rounded-md mb-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-4">
-                  <div>
+                <div className="flex gap-2 items-end mb-4">
+                  <div className="w-1/5">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       時
                     </label>
                     <select
                       value={newAlarmHour}
                       onChange={(e) => setNewAlarmHour(parseInt(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       {Array.from({ length: 24 }, (_, i) => (
                         <option key={i} value={i}>
@@ -186,14 +219,14 @@ function AlarmWindow() {
                       ))}
                     </select>
                   </div>
-                  <div>
+                  <div className="w-1/5">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       分
                     </label>
                     <select
                       value={newAlarmMinute}
                       onChange={(e) => setNewAlarmMinute(parseInt(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       {Array.from({ length: 60 }, (_, i) => (
                         <option key={i} value={i}>
@@ -202,7 +235,7 @@ function AlarmWindow() {
                       ))}
                     </select>
                   </div>
-                  <div>
+                  <div className="w-3/5">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       アラーム名（任意）
                     </label>
@@ -217,13 +250,13 @@ function AlarmWindow() {
                 </div>
                 <div className="flex justify-end gap-2">
                   <button
-                    onClick={handleAddAlarm}
+                    onClick={editingAlarmId ? handleSaveEdit : handleAddAlarm}
                     className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors min-w-[80px]"
                   >
-                    追加
+                    {editingAlarmId ? '更新' : '追加'}
                   </button>
                   <button
-                    onClick={() => setShowAddForm(false)}
+                    onClick={editingAlarmId ? handleCancelEdit : () => setShowAddForm(false)}
                     className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors min-w-[100px]"
                   >
                     キャンセル
@@ -242,7 +275,11 @@ function AlarmWindow() {
                     key={alarm.id}
                     className="flex items-center gap-4 p-4 border border-gray-200 rounded-md hover:bg-gray-50"
                   >
-                    <div className="text-2xl font-mono font-bold text-blue-600 min-w-[80px]">
+                    <div 
+                      className="text-2xl font-mono font-bold text-blue-600 cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors min-w-[80px]"
+                      onClick={() => handleStartEdit(alarm)}
+                      title="クリックして編集"
+                    >
                       {formatTime(alarm.hour, alarm.minute)}
                     </div>
                     <div className="flex-1">
