@@ -169,7 +169,7 @@ function App() {
       <div className="relative w-full h-full" style={{ backgroundColor: 'transparent' }}>
         {/* ドラッグ可能なアプリ左側の範囲（時計に被る幅） */}
         <div
-          className="absolute top-0 left-0 w-[100px] h-full drag-region cursor-move hover:bg-blue-300 bg-opacity-50 z-20"
+          className="absolute top-0 left-0 w-[40%] h-full drag-region cursor-move hover:bg-blue-300 bg-opacity-50 z-20"
         />
 
         {/* 時計＋ボタン部分 */}
@@ -186,7 +186,7 @@ function App() {
               <button
                 onClick={handleSettings}
                 className="w-10 h-10 flex items-center justify-center bg-gray-600 hover:bg-gray-500 text-white rounded-full shadow-lg"
-                title="設定"
+                title="アプリ設定"
               >
                 <svg
                   className="w-[26px] h-[26px] block"
@@ -200,7 +200,7 @@ function App() {
               {/* 終了ボタン */}
               <button
                 onClick={handleClose}
-                className="w-9 h-9 flex items-center justify-center bg-red-500 hover:bg-red-400 text-white rounded-full shadow-lg"
+                className="w-10 h-10 flex items-center justify-center bg-gray-600 hover:bg-gray-500 text-white rounded-full shadow-lg"
                 title="終了"
               >
                 <svg className="w-6 h-6 block" viewBox="0 0 24 24" fill="currentColor">
@@ -210,10 +210,10 @@ function App() {
             </div>
 
             {/* アラーム追加ボタン：hover時に表示 - 時計の中央下に配置 */}
-            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300 no-drag z-30">
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 no-drag z-30">
               <button
                 onClick={handleAddAlarm}
-                className="w-16 h-16 flex items-center justify-center bg-green-600 hover:bg-green-500 text-white rounded-full shadow-lg transition-colors duration-200"
+                className="w-16 h-16 flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-lg transition-colors duration-200"
                 title="アラーム追加"
               >
                 <svg className="w-10 h-10 block" viewBox="0 0 24 24" fill="currentColor">
@@ -233,7 +233,7 @@ function App() {
                       ...getTextStyle(),
                       fontSize: `${currentSizeSettings.fontSize.date}px`
                     }}
-                    className="mb-2"
+                    className="mb-2 select-none"
                   >
                     {date}
                   </div>
@@ -254,6 +254,7 @@ function App() {
                   ...getTextStyle(),
                   fontSize: `${currentSizeSettings.fontSize.time}px`
                 }}
+                className="select-none"
               >
                 {time}
               </div>
