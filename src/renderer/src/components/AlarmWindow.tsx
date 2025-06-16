@@ -156,6 +156,18 @@ function AlarmWindow() {
     setShowAddForm(false)
   }
 
+  const handleDeleteAllAlarms = () => {
+    if (sortedAlarms.length === 0) return
+    
+    const confirmed = window.confirm(
+      `登録されている${sortedAlarms.length}個のアラームを全て削除しますか？\n\nこの操作は取り消せません。`
+    )
+    
+    if (confirmed) {
+      deleteAllAlarms()
+    }
+  }
+
   const sortedAlarms = getSortedAlarms()
 
   return (
@@ -190,7 +202,7 @@ function AlarmWindow() {
                   アラーム追加
                 </button>
                 <button
-                  onClick={deleteAllAlarms}
+                  onClick={handleDeleteAllAlarms}
                   className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
                   disabled={sortedAlarms.length === 0}
                 >
