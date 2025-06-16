@@ -70,6 +70,34 @@ let mainWindow: BrowserWindow
 let settingsWindow: BrowserWindow | null = null
 let alarmWindow: BrowserWindow | null = null
 
+// Windows用タイトルバー非表示処理
+const applyWindowsTitleBarHiding = (window: BrowserWindow, delay: number = 0): void => {
+  if (process.platform !== 'win32') return
+  
+  window.setMenuBarVisibility(false)
+  window.setAutoHideMenuBar(true)
+  
+  setTimeout(() => {
+    window.webContents.executeJavaScript(`
+      // Windows用のタイトルバー完全非表示
+      document.documentElement.style.setProperty('--titlebar-height', '0px');
+      document.body.style.paddingTop = '0px';
+      
+      // タイトルバー関連要素を強制非表示
+      const titlebarElements = document.querySelectorAll('.titlebar, .window-controls-overlay, [data-titlebar]');
+      titlebarElements.forEach(el => {
+        el.style.display = 'none';
+        el.style.height = '0px';
+        el.style.visibility = 'hidden';
+      });
+      
+      console.log('Windows: タイトルバー非表示設定を適用しました');
+    `).catch(err => {
+      console.error('タイトルバー非表示設定の適用に失敗:', err)
+    })
+  }, delay)
+}
+
 async function createWindow(): Promise<void> {
   // 設定を読み込み
   const settings = await loadSettings()
@@ -114,29 +142,26 @@ async function createWindow(): Promise<void> {
 
   // Windows でのタイトルバー非表示を確実にする
   if (process.platform === 'win32') {
-    mainWindow.setMenuBarVisibility(false)
-    mainWindow.setAutoHideMenuBar(true)
-    
-    // ウィンドウが表示される前に設定を強制適用
+    // DOM読み込み完了時に初回適用
     mainWindow.webContents.once('dom-ready', () => {
-      mainWindow.webContents.executeJavaScript(`
-        // Windows用のタイトルバー完全非表示
-        document.documentElement.style.setProperty('--titlebar-height', '0px');
-        document.body.style.paddingTop = '0px';
-        
-        // タイトルバー関連要素を強制非表示
-        const titlebarElements = document.querySelectorAll('.titlebar, .window-controls-overlay, [data-titlebar]');
-        titlebarElements.forEach(el => {
-          el.style.display = 'none';
-          el.style.height = '0px';
-          el.style.visibility = 'hidden';
-        });
-      `)
+      applyWindowsTitleBarHiding(mainWindow, 0)
     })
     
     // ウィンドウフォーカス時にも設定を再適用
     mainWindow.on('focus', () => {
-      mainWindow.setMenuBarVisibility(false)
+      applyWindowsTitleBarHiding(mainWindow, 0)
+    })
+    
+    // ウィンドウリサイズ時にも設定を再適用
+    mainWindow.on('resize', () => {
+      applyWindowsTitleBarHiding(mainWindow, 50)
+    })
+    
+    // ウィンドウ移動時にも設定を再適用
+    mainWindow.on('moved', () => {
+      if (process.platform === 'win32') {
+        mainWindow.setMenuBarVisibility(false)
+      }
     })
   }
 
@@ -191,6 +216,9 @@ async function createWindow(): Promise<void> {
     mainWindow.center()
     
     mainWindow.setAlwaysOnTop(settings.alwaysOnTop)
+    
+    // Windows特有の設定を再適用（設定変更時にタイトルバーが表示される問題を防ぐ）
+    applyWindowsTitleBarHiding(mainWindow, 100)
     
     // 変更後のサイズを確認
     const newSize = mainWindow.getSize()
