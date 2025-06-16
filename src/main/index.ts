@@ -74,24 +74,75 @@ let alarmWindow: BrowserWindow | null = null
 const applyWindowsTitleBarHiding = (window: BrowserWindow, delay: number = 0): void => {
   if (process.platform !== 'win32') return
   
+  // ウィンドウレベルでの設定
   window.setMenuBarVisibility(false)
   window.setAutoHideMenuBar(true)
+  
+  // より強力な設定を追加
+  try {
+    // @ts-ignore - Windows特有のAPIを使用
+    if (window.setTitleBarOverlay) {
+      window.setTitleBarOverlay({ color: '#00000000', symbolColor: '#00000000', height: 0 })
+    }
+  } catch (e) {
+    // 無視
+  }
   
   setTimeout(() => {
     window.webContents.executeJavaScript(`
       // Windows用のタイトルバー完全非表示
       document.documentElement.style.setProperty('--titlebar-height', '0px');
       document.body.style.paddingTop = '0px';
+      document.body.style.marginTop = '0px';
       
-      // タイトルバー関連要素を強制非表示
-      const titlebarElements = document.querySelectorAll('.titlebar, .window-controls-overlay, [data-titlebar]');
-      titlebarElements.forEach(el => {
-        el.style.display = 'none';
-        el.style.height = '0px';
-        el.style.visibility = 'hidden';
+      // より包括的なタイトルバー関連要素を検索
+      const titlebarSelectors = [
+        '.titlebar', 
+        '.window-controls-overlay', 
+        '[data-titlebar]',
+        '.electron-titlebar',
+        '.window-titlebar',
+        '.app-titlebar',
+        'header[role="banner"]',
+        '.chrome-tabs',
+        '.tab-strip'
+      ];
+      
+      titlebarSelectors.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(el => {
+          el.style.display = 'none !important';
+          el.style.height = '0px !important';
+          el.style.visibility = 'hidden !important';
+          el.style.opacity = '0 !important';
+          el.style.position = 'absolute !important';
+          el.style.top = '-9999px !important';
+          el.style.left = '-9999px !important';
+        });
       });
       
-      console.log('Windows: タイトルバー非表示設定を適用しました');
+      // CSSでも強制的に非表示
+      const style = document.createElement('style');
+      style.textContent = \`
+        .titlebar, .window-controls-overlay, [data-titlebar], .electron-titlebar {
+          display: none !important;
+          height: 0 !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+        }
+        
+        body {
+          padding-top: 0 !important;
+          margin-top: 0 !important;
+        }
+        
+        html {
+          --titlebar-height: 0px !important;
+        }
+      \`;
+      document.head.appendChild(style);
+      
+      console.log('Windows: 強化されたタイトルバー非表示設定を適用しました');
     `).catch(err => {
       console.error('タイトルバー非表示設定の適用に失敗:', err)
     })
@@ -222,15 +273,47 @@ async function createWindow(): Promise<void> {
       // 変更後のサイズを確認
       const newSize = mainWindow.getSize()
       console.log(`変更後のウィンドウサイズ: ${newSize[0]}x${newSize[1]}`)
-      
-      // サイズ変更時のみWindows特有の設定を再適用
-      applyWindowsTitleBarHiding(mainWindow, 100)
     } else {
       console.log('ウィンドウサイズは変更されませんでした')
     }
     
     // alwaysOnTop設定は常に適用
     mainWindow.setAlwaysOnTop(settings.alwaysOnTop)
+    
+    // Windows特有の設定を強制的に再適用（全ての設定変更時）
+    if (process.platform === 'win32') {
+      console.log('Windows: タイトルバー非表示設定を強制再適用します')
+      
+      // 複数回、異なるタイミングで適用して確実にする
+      applyWindowsTitleBarHiding(mainWindow, 0)   // 即座に
+      applyWindowsTitleBarHiding(mainWindow, 50)  // 50ms後
+      applyWindowsTitleBarHiding(mainWindow, 150) // 150ms後
+      applyWindowsTitleBarHiding(mainWindow, 300) // 300ms後
+      
+      // さらに強力な方法：ウィンドウの再描画を強制
+      setTimeout(() => {
+        mainWindow.webContents.executeJavaScript(`
+          // 強制的にウィンドウを再描画
+          document.body.style.display = 'none';
+          document.body.offsetHeight; // リフロー強制
+          document.body.style.display = '';
+          
+          // タイトルバー関連要素を再度強制非表示
+          const titlebarElements = document.querySelectorAll('.titlebar, .window-controls-overlay, [data-titlebar], .electron-titlebar');
+          titlebarElements.forEach(el => {
+            el.style.display = 'none !important';
+            el.style.height = '0px !important';
+            el.style.visibility = 'hidden !important';
+            el.style.opacity = '0 !important';
+            el.remove(); // 完全に削除
+          });
+          
+          console.log('Windows: 強制再描画とタイトルバー削除を実行しました');
+        `).catch(err => {
+          console.error('強制再描画の実行に失敗:', err)
+        })
+      }, 100)
+    }
     
     // メインウィンドウに設定変更を通知
     mainWindow.webContents.send('settings-updated', settings)
