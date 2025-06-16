@@ -98,15 +98,15 @@ const applyWindowsTitleBarHiding = (window: BrowserWindow, delay: number = 0): v
   }, delay)
 }
 
-async function createWindow(): Promise<void> {
-  // 設定を読み込み
-  const settings = await loadSettings()
+// ウィンドウオプションを生成する関数
+const createWindowOptions = (settings: AppSettings, customBounds?: Partial<Electron.Rectangle>): Electron.BrowserWindowConstructorOptions => {
   const { windowWidth, windowHeight } = sizeMapping[settings.size]
 
-  // メインウィンドウを作成
   const windowOptions: Electron.BrowserWindowConstructorOptions = {
-    width: windowWidth,
-    height: windowHeight,
+    width: customBounds?.width || windowWidth,
+    height: customBounds?.height || windowHeight,
+    x: customBounds?.x,
+    y: customBounds?.y,
     show: false,
     autoHideMenuBar: true,
     resizable: true,
@@ -138,6 +138,80 @@ async function createWindow(): Promise<void> {
     windowOptions.titleBarStyle = 'hiddenInset'
   }
 
+  return windowOptions
+}
+
+// メインウィンドウを再作成する関数
+const recreateMainWindow = async (settings: AppSettings, bounds: Electron.Rectangle, wasVisible: boolean, previousURL: string): Promise<void> => {
+  const { windowWidth, windowHeight } = sizeMapping[settings.size]
+  
+  // 新しいウィンドウのサイズで位置を調整
+  const newBounds = {
+    ...bounds,
+    width: windowWidth,
+    height: windowHeight,
+    // 中央に配置するように位置を調整
+    x: bounds.x + (bounds.width - windowWidth) / 2,
+    y: bounds.y + (bounds.height - windowHeight) / 2
+  }
+
+  const windowOptions = createWindowOptions(settings, newBounds)
+  mainWindow = new BrowserWindow(windowOptions)
+
+  // Windows特有の設定を適用
+  if (process.platform === 'win32') {
+    // DOM読み込み完了時に初回適用
+    mainWindow.webContents.once('dom-ready', () => {
+      applyWindowsTitleBarHiding(mainWindow, 0)
+    })
+    
+    // ウィンドウフォーカス時にも設定を再適用
+    mainWindow.on('focus', () => {
+      applyWindowsTitleBarHiding(mainWindow, 0)
+    })
+    
+    // ウィンドウリサイズ時にも設定を再適用
+    mainWindow.on('resize', () => {
+      applyWindowsTitleBarHiding(mainWindow, 50)
+    })
+    
+    // ウィンドウ移動時にも設定を再適用
+    mainWindow.on('moved', () => {
+      if (process.platform === 'win32') {
+        mainWindow.setMenuBarVisibility(false)
+      }
+    })
+  }
+
+  mainWindow.on('ready-to-show', () => {
+    if (wasVisible) {
+      mainWindow.show()
+    }
+  })
+
+  mainWindow.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url)
+    return { action: 'deny' }
+  })
+
+  // URLを読み込み
+  if (process.env.NODE_ENV === 'development') {
+    mainWindow.loadURL('http://localhost:5173')
+  } else {
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+  }
+
+  // 設定変更を通知
+  mainWindow.webContents.once('dom-ready', () => {
+    mainWindow.webContents.send('settings-updated', settings)
+  })
+}
+
+async function createWindow(): Promise<void> {
+  // 設定を読み込み
+  const settings = await loadSettings()
+  
+  const windowOptions = createWindowOptions(settings)
   mainWindow = new BrowserWindow(windowOptions)
 
   // Windows でのタイトルバー非表示を確実にする
@@ -180,8 +254,10 @@ async function createWindow(): Promise<void> {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+}
 
-  // IPCハンドラーの設定
+// IPCハンドラーの設定
+const setupIpcHandlers = (): void => {
   ipcMain.on('app-close', () => {
     mainWindow.close()
   })
@@ -206,34 +282,39 @@ async function createWindow(): Promise<void> {
     const currentSize = mainWindow.getSize()
     const { windowWidth, windowHeight } = sizeMapping[settings.size]
     
-    // サイズが実際に変更された場合のみsetSize()を実行
+    // サイズが実際に変更された場合はウィンドウを再作成
     const sizeChanged = currentSize[0] !== windowWidth || currentSize[1] !== windowHeight
     
     if (sizeChanged) {
       console.log(`ウィンドウサイズを変更: ${windowWidth}x${windowHeight} (サイズ設定: ${settings.size})`)
-      console.log(`変更前のウィンドウサイズ: ${currentSize[0]}x${currentSize[1]}`)
+      console.log('ウィンドウを再作成します...')
       
-      // ウィンドウサイズを変更
-      mainWindow.setSize(windowWidth, windowHeight)
+      // 現在のウィンドウの位置を保存
+      const bounds = mainWindow.getBounds()
+      const isVisible = mainWindow.isVisible()
+      const currentURL = mainWindow.webContents.getURL()
       
-      // ウィンドウを中央に配置
-      mainWindow.center()
+      // 古いウィンドウを閉じる
+      mainWindow.destroy()
       
-      // 変更後のサイズを確認
-      const newSize = mainWindow.getSize()
-      console.log(`変更後のウィンドウサイズ: ${newSize[0]}x${newSize[1]}`)
+      // 新しいウィンドウを作成
+      await recreateMainWindow(settings, bounds, isVisible, currentURL)
       
-      // サイズ変更時のみWindows特有の設定を再適用
-      applyWindowsTitleBarHiding(mainWindow, 100)
+      console.log('ウィンドウの再作成が完了しました')
     } else {
       console.log('ウィンドウサイズは変更されませんでした')
+      
+      // サイズ変更がない場合は通常の設定更新
+      mainWindow.setAlwaysOnTop(settings.alwaysOnTop)
+      
+      // Windows特有の設定を再適用（念のため）
+      if (process.platform === 'win32') {
+        applyWindowsTitleBarHiding(mainWindow, 50)
+      }
+      
+      // メインウィンドウに設定変更を通知
+      mainWindow.webContents.send('settings-updated', settings)
     }
-    
-    // alwaysOnTop設定は常に適用
-    mainWindow.setAlwaysOnTop(settings.alwaysOnTop)
-    
-    // メインウィンドウに設定変更を通知
-    mainWindow.webContents.send('settings-updated', settings)
   })
 
   // アラーム設定の保存・読み込み
@@ -362,6 +443,10 @@ function createAlarmWindow(): void {
 
 // このメソッドは、Electronが初期化を終えて、ブラウザウィンドウを作成する準備ができたときに呼び出されます
 app.whenReady().then(async () => {
+  // IPCハンドラーを設定
+  setupIpcHandlers()
+  
+  // メインウィンドウを作成
   await createWindow()
 
   app.on('activate', async function () {
