@@ -109,8 +109,8 @@ function AlarmWindow() {
       name: alarmName,
       hour: newAlarmHour,
       minute: newAlarmMinute,
-      enabled: true,
-      preAlarmEnabled: false
+      enabled: settings.globalAutoEnableAlarm,
+      preAlarmEnabled: settings.globalAutoEnablePreAlarm
     })
     
     setNewAlarmName('')
@@ -217,8 +217,8 @@ function AlarmWindow() {
         name: alarmName,
         hour: time.hour,
         minute: time.minute,
-        enabled: true,
-        preAlarmEnabled: false
+        enabled: settings.globalAutoEnableAlarm,
+        preAlarmEnabled: settings.globalAutoEnablePreAlarm
       })
     })
 
@@ -574,6 +574,19 @@ function AlarmWindow() {
                         className="w-full"
                       />
                     </div>
+                    <div>
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={settings.globalAutoEnablePreAlarm}
+                          onChange={(e) => updateGlobalSettings({ globalAutoEnablePreAlarm: e.target.checked })}
+                          className="mr-2"
+                        />
+                        <span className="text-sm font-medium text-gray-700">
+                          アラーム追加時に先行アラームを自動でONにする
+                        </span>
+                      </label>
+                    </div>
                 </div>
               </div>
 
@@ -656,6 +669,19 @@ function AlarmWindow() {
                       onChange={(e) => updateGlobalSettings({ globalOffsetSeconds: parseInt(e.target.value) })}
                       className="w-full"
                     />
+                  </div>
+                  <div>
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={settings.globalAutoEnableAlarm}
+                        onChange={(e) => updateGlobalSettings({ globalAutoEnableAlarm: e.target.checked })}
+                        className="mr-2"
+                      />
+                      <span className="text-sm font-medium text-gray-700">
+                        アラーム追加時にアラームを自動でONにする
+                      </span>
+                    </label>
                   </div>
                 </div>
               </div>
