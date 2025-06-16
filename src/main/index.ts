@@ -289,6 +289,8 @@ async function createWindow(): Promise<void> {
       applyWindowsTitleBarHiding(mainWindow, 50)  // 50ms後
       applyWindowsTitleBarHiding(mainWindow, 150) // 150ms後
       applyWindowsTitleBarHiding(mainWindow, 300) // 300ms後
+      applyWindowsTitleBarHiding(mainWindow, 1000) // 1000ms後
+      applyWindowsTitleBarHiding(mainWindow, 5000) // 5000ms後
       
       // さらに強力な方法：ウィンドウの再描画を強制
       setTimeout(() => {
