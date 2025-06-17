@@ -2,7 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { promises as fs } from 'fs'
 import { AppSettings, defaultSettings, sizeMapping } from '../shared/types/settings'
-import { AlarmSettings, defaultAlarmSettings } from '../shared/types/alarm'
+import { AlarmSettings, defaultAlarmSettings, AlarmItem } from '../shared/types/alarm'
 
 // 設定ファイルのパス
 const getSettingsPath = (): string => {
@@ -69,6 +69,11 @@ const saveAlarmSettings = async (settings: AlarmSettings): Promise<void> => {
 let mainWindow: BrowserWindow
 let settingsWindow: BrowserWindow | null = null
 let alarmWindow: BrowserWindow | null = null
+
+// アラーム関連の変数
+let alarmCheckInterval: NodeJS.Timeout | null = null
+let activeAlarms: Set<string> = new Set() // 現在鳴っているアラーム
+let recentAlarms: Map<string, number> = new Map() // 最近鳴ったアラーム（重複防止）
 
 // Windows用タイトルバー非表示処理
 const applyWindowsTitleBarHiding = (window: BrowserWindow, delay: number = 0): void => {
@@ -445,9 +450,159 @@ function createAlarmWindow(): void {
   }
 }
 
+// アラーム音の再生（メインプロセス）
+const playAlarmSound = async (soundFile: string): Promise<void> => {
+  try {
+    const path = require('path')
+    const { exec } = require('child_process')
+    
+    let soundPath: string
+    if (process.env.NODE_ENV === 'development') {
+      soundPath = path.join(__dirname, '../../src/assets/sounds', soundFile)
+    } else {
+      soundPath = path.join(process.resourcesPath, 'assets', 'sounds', soundFile)
+    }
+    
+    console.log('アラーム音を再生:', soundPath)
+    
+    // プラットフォーム別に音声再生
+    if (process.platform === 'win32') {
+      exec(`powershell -c "(New-Object Media.SoundPlayer '${soundPath}').PlaySync();"`)
+    } else if (process.platform === 'darwin') {
+      exec(`afplay "${soundPath}"`)
+    } else {
+      exec(`aplay "${soundPath}"`)
+    }
+  } catch (error) {
+    console.error('アラーム音の再生に失敗:', error)
+  }
+}
+
+// アラームの時間チェック
+const checkAlarms = async (): Promise<void> => {
+  try {
+    const alarmSettings = await loadAlarmSettings()
+    const now = new Date()
+    const currentHour = now.getHours()
+    const currentMinute = now.getMinutes()
+    const currentSeconds = now.getSeconds()
+    const currentTime = now.getTime()
+    
+    // 有効なアラームをチェック
+    for (const alarm of alarmSettings.alarms) {
+      if (!alarm.enabled) continue
+      
+      const alarmKey = `${alarm.id}_${alarm.hour}_${alarm.minute}`
+      
+      // 先行アラームのチェック
+      if (alarm.preAlarmEnabled && alarmSettings.globalPreAlarmEnabled) {
+        const preAlarmTime = new Date()
+        preAlarmTime.setHours(alarm.hour, alarm.minute - alarmSettings.globalPreAlarmMinutes, 0, 0)
+        
+        const preAlarmKey = `pre_${alarmKey}`
+        const preAlarmHour = preAlarmTime.getHours()
+        const preAlarmMinute = preAlarmTime.getMinutes()
+        
+        if (currentHour === preAlarmHour && 
+            currentMinute === preAlarmMinute && 
+            currentSeconds < 10 && // 10秒以内
+            !activeAlarms.has(preAlarmKey) &&
+            (!recentAlarms.has(preAlarmKey) || currentTime - recentAlarms.get(preAlarmKey)! > 60000)) {
+          
+          console.log(`先行アラーム発動: ${alarm.name} (${alarm.hour}:${String(alarm.minute).padStart(2, '0')})`)
+          activeAlarms.add(preAlarmKey)
+          recentAlarms.set(preAlarmKey, currentTime)
+          
+          // 先行アラーム音を再生
+          await playAlarmSound(alarmSettings.globalPreAlarmSound)
+          
+          // メインウィンドウに通知
+          if (mainWindow) {
+            mainWindow.webContents.send('pre-alarm-triggered', {
+              id: alarm.id,
+              name: alarm.name,
+              hour: alarm.hour,
+              minute: alarm.minute
+            })
+          }
+          
+          // 10秒後にアクティブリストから削除
+          setTimeout(() => {
+            activeAlarms.delete(preAlarmKey)
+          }, 10000)
+        }
+      }
+      
+      // メインアラームのチェック
+      const adjustedSeconds = alarmSettings.globalOffsetSeconds
+      if (currentHour === alarm.hour && 
+          currentMinute === alarm.minute && 
+          currentSeconds < 10 && // 10秒以内
+          !activeAlarms.has(alarmKey) &&
+          (!recentAlarms.has(alarmKey) || currentTime - recentAlarms.get(alarmKey)! > 60000)) {
+        
+        console.log(`アラーム発動: ${alarm.name} (${alarm.hour}:${String(alarm.minute).padStart(2, '0')})`)
+        activeAlarms.add(alarmKey)
+        recentAlarms.set(alarmKey, currentTime)
+        
+        // アラーム音を再生
+        await playAlarmSound(alarmSettings.globalAlarmSound)
+        
+        // メインウィンドウに通知
+        if (mainWindow) {
+          mainWindow.webContents.send('alarm-triggered', {
+            id: alarm.id,
+            name: alarm.name,
+            hour: alarm.hour,
+            minute: alarm.minute
+          })
+        }
+        
+        // 10秒後にアクティブリストから削除
+        setTimeout(() => {
+          activeAlarms.delete(alarmKey)
+        }, 10000)
+      }
+    }
+    
+    // 古いアラーム履歴を削除（1時間以上前）
+    const oneHourAgo = currentTime - 3600000
+    for (const [key, timestamp] of recentAlarms.entries()) {
+      if (timestamp < oneHourAgo) {
+        recentAlarms.delete(key)
+      }
+    }
+  } catch (error) {
+    console.error('アラームチェック中にエラー:', error)
+  }
+}
+
+// アラームチェック開始
+const startAlarmCheck = (): void => {
+  if (alarmCheckInterval) {
+    clearInterval(alarmCheckInterval)
+  }
+  
+  // 1秒ごとにアラームをチェック
+  alarmCheckInterval = setInterval(checkAlarms, 1000)
+  console.log('アラームチェック開始')
+}
+
+// アラームチェック停止
+const stopAlarmCheck = (): void => {
+  if (alarmCheckInterval) {
+    clearInterval(alarmCheckInterval)
+    alarmCheckInterval = null
+    console.log('アラームチェック停止')
+  }
+}
+
 // このメソッドは、Electronが初期化を終えて、ブラウザウィンドウを作成する準備ができたときに呼び出されます
 app.whenReady().then(async () => {
   await createWindow()
+  
+  // アラームチェック開始
+  startAlarmCheck()
 
   app.on('activate', async function () {
     // macOSでは、通常、アプリケーションのアイコンがクリックされたときにウィンドウが開いていない場合、
@@ -458,7 +613,15 @@ app.whenReady().then(async () => {
 
 // Windowsおよび Linuxではすべてのウィンドウが閉じられたときにアプリを終了します
 app.on('window-all-closed', () => {
+  // アラームチェック停止
+  stopAlarmCheck()
+  
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+// アプリケーション終了前の処理
+app.on('before-quit', () => {
+  stopAlarmCheck()
 }) 

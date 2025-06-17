@@ -21,6 +21,13 @@ function App() {
 
   const [time, setTime] = useState('')
   const [date, setDate] = useState('')
+  const [alarmNotification, setAlarmNotification] = useState<{
+    type: 'alarm' | 'pre-alarm'
+    name: string
+    hour: number
+    minute: number
+    timestamp: number
+  } | null>(null)
   
   const { settings, openSettings, loadSettings, isSettingsOpen } = useSettingsStore()
   
@@ -36,9 +43,47 @@ function App() {
       useSettingsStore.getState().setSettings(updatedSettings)
     })
     
+    // アラーム通知の監視
+    const handleAlarmTriggered = (alarmData: any) => {
+      console.log('アラーム発動:', alarmData)
+      setAlarmNotification({
+        type: 'alarm',
+        name: alarmData.name,
+        hour: alarmData.hour,
+        minute: alarmData.minute,
+        timestamp: Date.now()
+      })
+      
+      // 5秒後に通知を自動で消す
+      setTimeout(() => {
+        setAlarmNotification(null)
+      }, 5000)
+    }
+
+    const handlePreAlarmTriggered = (alarmData: any) => {
+      console.log('先行アラーム発動:', alarmData)
+      setAlarmNotification({
+        type: 'pre-alarm',
+        name: alarmData.name,
+        hour: alarmData.hour,
+        minute: alarmData.minute,
+        timestamp: Date.now()
+      })
+      
+      // 5秒後に通知を自動で消す
+      setTimeout(() => {
+        setAlarmNotification(null)
+      }, 5000)
+    }
+
+    // IPCイベントリスナーを登録
+    window.electronAPI?.onAlarmTriggered?.(handleAlarmTriggered)
+    window.electronAPI?.onPreAlarmTriggered?.(handlePreAlarmTriggered)
+    
     // クリーンアップ
     return () => {
       window.electronAPI?.removeSettingsUpdatedListener()
+      // アラームリスナーのクリーンアップ（必要に応じて）
     }
   }, [loadSettings])
 
@@ -261,6 +306,44 @@ function App() {
             </div>
           </div>
         </div>
+
+        {/* アラーム通知 */}
+        {alarmNotification && (
+          <div className="fixed top-4 right-4 z-50 animate-bounce">
+            <div className={`px-6 py-4 rounded-lg shadow-lg border-2 ${
+              alarmNotification.type === 'alarm' 
+                ? 'bg-red-500 border-red-600 text-white' 
+                : 'bg-yellow-500 border-yellow-600 text-black'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className="text-2xl">
+                  {alarmNotification.type === 'alarm' ? '🔔' : '⏰'}
+                </div>
+                <div>
+                  <div className="font-bold text-lg">
+                    {alarmNotification.type === 'alarm' ? 'アラーム！' : '先行アラーム'}
+                  </div>
+                  <div className="text-sm">
+                    {alarmNotification.name}
+                  </div>
+                  <div className="text-sm">
+                    {String(alarmNotification.hour).padStart(2, '0')}:
+                    {String(alarmNotification.minute).padStart(2, '0')}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setAlarmNotification(null)}
+                  className="ml-4 w-8 h-8 flex items-center justify-center bg-black bg-opacity-20 hover:bg-opacity-40 rounded-full transition-colors"
+                  title="閉じる"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
     </>

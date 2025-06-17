@@ -15,6 +15,8 @@ export interface ElectronAPI {
   expandWindowForButtons: () => void
   restoreWindowSize: () => void
   getAssetPath: (assetPath: string) => Promise<string>
+  onAlarmTriggered: (callback: (alarmData: any) => void) => void
+  onPreAlarmTriggered: (callback: (alarmData: any) => void) => void
 }
 
 declare global {
@@ -33,6 +35,8 @@ declare global {
       expandWindowForButtons: () => void
       restoreWindowSize: () => void
       getAssetPath: (assetPath: string) => Promise<string>
+      onAlarmTriggered: (callback: (alarmData: any) => void) => void
+      onPreAlarmTriggered: (callback: (alarmData: any) => void) => void
     }
   }
 } 
