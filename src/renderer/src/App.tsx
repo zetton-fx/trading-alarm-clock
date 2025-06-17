@@ -31,15 +31,121 @@ function App() {
   
   const { settings, openSettings, loadSettings, isSettingsOpen } = useSettingsStore()
 
-  // シンプルな音声再生（確実に動作する）
-  const playAlarmAudio = (soundFile: string) => {
+  // 音声を事前読み込みして autoplay policy に対応
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null)
+  const [isAudioEnabled, setIsAudioEnabled] = useState(false)
+
+  // ページ読み込み時に音声コンテキストを準備
+  useEffect(() => {
+    const initAudio = () => {
+      try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+        setAudioContext(ctx)
+        setIsAudioEnabled(true)
+        console.log('音声コンテキスト初期化完了')
+      } catch (error) {
+        console.error('音声コンテキスト初期化失敗:', error)
+      }
+    }
+
+    // 最初のクリックで音声を有効化
+    const enableAudio = () => {
+      initAudio()
+      document.removeEventListener('click', enableAudio)
+      document.removeEventListener('keydown', enableAudio)
+    }
+
+    document.addEventListener('click', enableAudio)
+    document.addEventListener('keydown', enableAudio)
+    
+    return () => {
+      document.removeEventListener('click', enableAudio)
+      document.removeEventListener('keydown', enableAudio)
+    }
+  }, [])
+
+  // 確実に音声を再生する関数（Electron autoplay policy対応）
+  const playAlarmAudio = async (soundFile: string) => {
     try {
-      const audio = new Audio(`/sounds/${soundFile}`)
-      audio.volume = 0.7
-      audio.play().catch(err => console.error('音声再生エラー:', err))
-      console.log('🎵 音声再生実行:', soundFile)
+      console.log('音声再生開始:', soundFile)
+      
+      // 複数の音声再生手法を試行
+      const audioSources = [
+        `/sounds/${soundFile}`,
+        `./sounds/${soundFile}`,
+        `sounds/${soundFile}`,
+        `src/assets/sounds/${soundFile}`
+      ]
+      
+      for (const src of audioSources) {
+        try {
+          console.log('音声ソース試行:', src)
+          const audio = new Audio(src)
+          audio.volume = 0.8
+          audio.preload = 'auto'
+          
+          // AudioContextがある場合は必ずresumeする
+          if (audioContext && audioContext.state === 'suspended') {
+            await audioContext.resume()
+            console.log('AudioContext resumed')
+          }
+          
+          // 音声を即座に再生
+          await audio.play()
+          console.log('音声再生成功:', src)
+          return // 成功したら他の試行をスキップ
+          
+        } catch (err) {
+          console.warn(`音声ソース ${src} で失敗:`, err)
+          continue // 次のソースを試行
+        }
+      }
+      
+      // 全ての試行が失敗した場合の最後の手段
+      console.log('全ての音声ソース試行が失敗、最後の手段を実行')
+      const fallbackAudio = new Audio()
+      fallbackAudio.volume = 0.8
+      fallbackAudio.src = `/sounds/${soundFile}`
+      
+      // 強制的に音声コンテキストを作成・再開
+      if (!audioContext) {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+        setAudioContext(ctx)
+        if (ctx.state === 'suspended') {
+          await ctx.resume()
+        }
+      }
+      
+      // 最後の試行
+      await fallbackAudio.play()
+      console.log('fallback音声再生成功')
+      
     } catch (error) {
-      console.error('音声再生失敗:', error)
+      console.error('全ての音声再生試行が失敗:', error)
+      
+      // 最後の最後の手段：Web Audio APIを使用
+      try {
+        console.log('Web Audio API で音声再生を試行')
+        if (audioContext) {
+          // シンプルなビープ音を生成
+          const oscillator = audioContext.createOscillator()
+          const gainNode = audioContext.createGain()
+          
+          oscillator.connect(gainNode)
+          gainNode.connect(audioContext.destination)
+          
+          oscillator.frequency.setValueAtTime(800, audioContext.currentTime)
+          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1)
+          
+          oscillator.start(audioContext.currentTime)
+          oscillator.stop(audioContext.currentTime + 1)
+          
+          console.log('Web Audio API でビープ音を再生しました')
+        }
+      } catch (webAudioError) {
+        console.error('Web Audio API でも失敗:', webAudioError)
+      }
     }
   }
   
@@ -289,6 +395,22 @@ function App() {
               className={`px-8 py-4 rounded-lg border-2 shadow-lg ${getFontClass()}`}
               style={getBoxStyle()}
             >
+              {/* 音声有効化メッセージ */}
+              {!isAudioEnabled && (
+                <div 
+                  className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs px-2 py-1 rounded"
+                  style={{
+                    background: 'rgba(255, 255, 0, 0.9)',
+                    color: '#000',
+                    fontSize: '10px',
+                    whiteSpace: 'nowrap',
+                    animation: 'blink 1s infinite'
+                  }}
+                >
+                  クリックして音声を有効化
+                </div>
+              )}
+              
               {date && (
                 <>
                   <div 

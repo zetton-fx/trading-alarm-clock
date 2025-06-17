@@ -187,7 +187,10 @@ async function createWindow(): Promise<void> {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      webSecurity: false, // 音声再生のためにwebSecurityを無効化
+      allowRunningInsecureContent: true,
+      experimentalFeatures: true
     }
   }
 
