@@ -17,6 +17,7 @@ export interface ElectronAPI {
   getAssetPath: (assetPath: string) => Promise<string>
   onAlarmTriggered: (callback: (alarmData: any) => void) => void
   onPreAlarmTriggered: (callback: (alarmData: any) => void) => void
+  testAlarmSound: (soundFile: string) => Promise<void>
 }
 
 declare global {
@@ -37,6 +38,7 @@ declare global {
       getAssetPath: (assetPath: string) => Promise<string>
       onAlarmTriggered: (callback: (alarmData: any) => void) => void
       onPreAlarmTriggered: (callback: (alarmData: any) => void) => void
+      testAlarmSound: (soundFile: string) => Promise<void>
     }
   }
 } 

@@ -364,6 +364,18 @@ async function createWindow(): Promise<void> {
     
     return fullPath
   })
+
+  // デバッグ用：アラーム音テスト再生
+  ipcMain.handle('test-alarm-sound', async (_, soundFile: string): Promise<void> => {
+    console.log('アラーム音テスト再生開始:', soundFile)
+    try {
+      await playAlarmSound(soundFile)
+      console.log('アラーム音テスト再生完了')
+    } catch (error) {
+      console.error('アラーム音テスト再生エラー:', error)
+      throw error
+    }
+  })
 }
 
 // 設定ウィンドウを作成
@@ -454,6 +466,7 @@ function createAlarmWindow(): void {
 const playAlarmSound = async (soundFile: string): Promise<void> => {
   try {
     const path = require('path')
+    const fs = require('fs')
     const { exec } = require('child_process')
     
     let soundPath: string
@@ -463,18 +476,67 @@ const playAlarmSound = async (soundFile: string): Promise<void> => {
       soundPath = path.join(process.resourcesPath, 'assets', 'sounds', soundFile)
     }
     
-    console.log('アラーム音を再生:', soundPath)
+    console.log('アラーム音を再生開始:', soundPath)
+    console.log('ファイルが存在するか:', fs.existsSync(soundPath))
+    console.log('プラットフォーム:', process.platform)
+    
+    if (!fs.existsSync(soundPath)) {
+      console.error('音声ファイルが見つかりません:', soundPath)
+      
+      // 代替パスを試してみる
+      const alternativePaths = [
+        path.join(process.resourcesPath, 'app.asar.unpacked', 'src', 'assets', 'sounds', soundFile),
+        path.join(__dirname, '../assets/sounds', soundFile),
+        path.join(__dirname, '../../assets/sounds', soundFile)
+      ]
+      
+      for (const altPath of alternativePaths) {
+        console.log('代替パスを試行:', altPath)
+        if (fs.existsSync(altPath)) {
+          console.log('代替パスでファイルを発見:', altPath)
+          soundPath = altPath
+          break
+        }
+      }
+      
+      if (!fs.existsSync(soundPath)) {
+        console.error('すべての代替パスでファイルが見つかりませんでした')
+        return
+      }
+    }
     
     // プラットフォーム別に音声再生
-    if (process.platform === 'win32') {
-      exec(`powershell -c "(New-Object Media.SoundPlayer '${soundPath}').PlaySync();"`)
-    } else if (process.platform === 'darwin') {
-      exec(`afplay "${soundPath}"`)
-    } else {
-      exec(`aplay "${soundPath}"`)
-    }
+    return new Promise((resolve, reject) => {
+      let command: string
+      
+      if (process.platform === 'win32') {
+        // Windowsの場合、複数の方法を試す
+        command = `powershell -c "try { (New-Object Media.SoundPlayer '${soundPath}').PlaySync(); Write-Host 'Sound played successfully' } catch { Write-Error $_.Exception.Message }"`
+      } else if (process.platform === 'darwin') {
+        // macOSの場合
+        command = `afplay "${soundPath}"`
+      } else {
+        // Linuxの場合、複数の音声プレイヤーを試す
+        command = `aplay "${soundPath}" || paplay "${soundPath}" || ffplay -nodisp -autoexit "${soundPath}" 2>/dev/null`
+      }
+      
+      console.log('実行するコマンド:', command)
+      
+      exec(command, (error: any, stdout: any, stderr: any) => {
+        if (error) {
+          console.error('音声再生コマンドエラー:', error)
+          console.error('stderr:', stderr)
+          reject(error)
+        } else {
+          console.log('音声再生成功')
+          if (stdout) console.log('stdout:', stdout)
+          resolve()
+        }
+      })
+    })
   } catch (error) {
     console.error('アラーム音の再生に失敗:', error)
+    throw error
   }
 }
 
@@ -514,7 +576,9 @@ const checkAlarms = async (): Promise<void> => {
           recentAlarms.set(preAlarmKey, currentTime)
           
           // 先行アラーム音を再生
-          await playAlarmSound(alarmSettings.globalPreAlarmSound)
+          playAlarmSound(alarmSettings.globalPreAlarmSound).catch(err => {
+            console.error('先行アラーム音の再生に失敗:', err)
+          })
           
           // メインウィンドウに通知
           if (mainWindow) {
@@ -546,7 +610,9 @@ const checkAlarms = async (): Promise<void> => {
         recentAlarms.set(alarmKey, currentTime)
         
         // アラーム音を再生
-        await playAlarmSound(alarmSettings.globalAlarmSound)
+        playAlarmSound(alarmSettings.globalAlarmSound).catch(err => {
+          console.error('アラーム音の再生に失敗:', err)
+        })
         
         // メインウィンドウに通知
         if (mainWindow) {

@@ -37,5 +37,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   
   // アセットファイル関連
-  getAssetPath: (assetPath: string): Promise<string> => ipcRenderer.invoke('get-asset-path', assetPath)
+  getAssetPath: (assetPath: string): Promise<string> => ipcRenderer.invoke('get-asset-path', assetPath),
+  
+  // デバッグ用
+  testAlarmSound: (soundFile: string): Promise<void> => ipcRenderer.invoke('test-alarm-sound', soundFile)
 }) 

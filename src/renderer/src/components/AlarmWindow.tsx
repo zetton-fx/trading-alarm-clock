@@ -514,11 +514,19 @@ function AlarmWindow() {
                           ))}
                         </select>
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             if (currentAudio && currentAudioType === 'preAlarm') {
                               stopCurrentAudio()
                             } else {
-                              playSound(settings.globalPreAlarmSound, settings.globalPreAlarmVolume, 'preAlarm')
+                              // メインプロセスの音声再生をテスト
+                              try {
+                                console.log('メインプロセスの音声再生をテスト:', settings.globalPreAlarmSound)
+                                await window.electronAPI.testAlarmSound(settings.globalPreAlarmSound)
+                              } catch (error) {
+                                console.error('メインプロセスの音声再生テストエラー:', error)
+                                // フォールバック：ブラウザの音声再生を試す
+                                playSound(settings.globalPreAlarmSound, settings.globalPreAlarmVolume, 'preAlarm')
+                              }
                             }
                           }}
                           className={`px-3 py-2 ${(currentAudio && currentAudioType === 'preAlarm') ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} text-white rounded-md transition-colors flex items-center gap-1`}
@@ -611,11 +619,19 @@ function AlarmWindow() {
                         ))}
                       </select>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           if (currentAudio && currentAudioType === 'alarm') {
                             stopCurrentAudio()
                           } else {
-                            playSound(settings.globalAlarmSound, settings.globalVolume, 'alarm')
+                            // メインプロセスの音声再生をテスト
+                            try {
+                              console.log('メインプロセスの音声再生をテスト:', settings.globalAlarmSound)
+                              await window.electronAPI.testAlarmSound(settings.globalAlarmSound)
+                            } catch (error) {
+                              console.error('メインプロセスの音声再生テストエラー:', error)
+                              // フォールバック：ブラウザの音声再生を試す
+                              playSound(settings.globalAlarmSound, settings.globalVolume, 'alarm')
+                            }
                           }
                         }}
                         className={`px-3 py-2 ${currentAudio && currentAudioType === 'alarm' ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} text-white rounded-md transition-colors flex items-center gap-1`}
