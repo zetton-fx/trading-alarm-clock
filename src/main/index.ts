@@ -587,6 +587,13 @@ const checkAlarms = async (): Promise<void> => {
     }
 
     const alarmSettings = await loadAlarmSettings()
+    console.log('🔍 アラーム設定読み込み完了:', {
+      hasSettings: !!alarmSettings,
+      alarmsCount: alarmSettings?.alarms?.length || 0,
+      globalAlarmSound: alarmSettings?.globalAlarmSound,
+      globalPreAlarmSound: alarmSettings?.globalPreAlarmSound
+    })
+    
     const now = new Date()
     const currentHour = now.getHours()
     const currentMinute = now.getMinutes()
@@ -621,14 +628,19 @@ const checkAlarms = async (): Promise<void> => {
             (!recentAlarms.has(preAlarmKey) || currentTime - recentAlarms.get(preAlarmKey)! > 60000)) {
           
           console.log(`先行アラーム発動: ${alarm.name} (${alarm.hour}:${String(alarm.minute).padStart(2, '0')})`)
-          console.log('使用する先行アラーム音声ファイル:', alarmSettings.globalPreAlarmSound)
-          console.log('先行アラームボリューム設定:', alarmSettings.globalPreAlarmVolume)
-          activeAlarms.add(preAlarmKey)
-          recentAlarms.set(preAlarmKey, currentTime)
           
-          // 先行アラーム音を再生
-          console.log('===== 先行アラーム音の再生処理開始 =====')
           try {
+            console.log('🔍 先行アラーム設定を確認中...')
+            console.log('先行アラーム用 alarmSettings:', typeof alarmSettings)
+            console.log('globalPreAlarmSound:', alarmSettings?.globalPreAlarmSound || 'undefined')
+            console.log('globalPreAlarmVolume:', alarmSettings?.globalPreAlarmVolume || 'undefined')
+            
+            activeAlarms.add(preAlarmKey)
+            recentAlarms.set(preAlarmKey, currentTime)
+            console.log('✅ 先行アラームキー設定完了')
+            
+            // 先行アラーム音を再生
+            console.log('===== 先行アラーム音の再生処理開始 =====')
             console.log('先行アラーム用playAlarmSound関数を呼び出します...')
             const preAlarmPromise = playAlarmSound(alarmSettings.globalPreAlarmSound)
             console.log('先行アラーム用playAlarmSound関数が Promise を返しました')
@@ -639,8 +651,9 @@ const checkAlarms = async (): Promise<void> => {
               .catch(err => {
                 console.error('先行アラーム音の再生に失敗:', err)
               })
-          } catch (syncError) {
-            console.error('先行アラーム用playAlarmSound関数の同期呼び出しでエラー:', syncError)
+          } catch (error: any) {
+            console.error('❌ 先行アラーム処理中にエラー:', error)
+            console.error('先行アラーム エラースタック:', error?.stack)
           }
           
           // メインウィンドウに通知
@@ -673,14 +686,19 @@ const checkAlarms = async (): Promise<void> => {
           (!recentAlarms.has(alarmKey) || currentTime - recentAlarms.get(alarmKey)! > 60000)) {
         
         console.log(`アラーム発動: ${alarm.name} (${alarm.hour}:${String(alarm.minute).padStart(2, '0')})`)
-        console.log('使用する音声ファイル:', alarmSettings.globalAlarmSound)
-        console.log('ボリューム設定:', alarmSettings.globalVolume)
-        activeAlarms.add(alarmKey)
-        recentAlarms.set(alarmKey, currentTime)
         
-                // アラーム音を再生
-        console.log('===== アラーム音の再生処理開始 =====')
         try {
+          console.log('🔍 アラーム設定を確認中...')
+          console.log('alarmSettings オブジェクト:', typeof alarmSettings)
+          console.log('globalAlarmSound:', alarmSettings?.globalAlarmSound || 'undefined')
+          console.log('globalVolume:', alarmSettings?.globalVolume || 'undefined')
+          
+          activeAlarms.add(alarmKey)
+          recentAlarms.set(alarmKey, currentTime)
+          console.log('✅ アラームキー設定完了')
+        
+          // アラーム音を再生
+          console.log('===== アラーム音の再生処理開始 =====')
           console.log('playAlarmSound関数を呼び出します...')
           const soundPromise = playAlarmSound(alarmSettings.globalAlarmSound)
           console.log('playAlarmSound関数が Promise を返しました')
@@ -691,8 +709,9 @@ const checkAlarms = async (): Promise<void> => {
             .catch(err => {
               console.error('アラーム音の再生に失敗:', err)
             })
-        } catch (syncError) {
-          console.error('playAlarmSound関数の同期呼び出しでエラー:', syncError)
+        } catch (error: any) {
+          console.error('❌ アラーム処理中にエラー:', error)
+          console.error('エラースタック:', error?.stack)
         }
         
         // メインウィンドウに通知
