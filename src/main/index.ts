@@ -392,42 +392,7 @@ async function createWindow(): Promise<void> {
     return fullPath
   })
 
-  // デバッグ用：アラーム音テスト再生
-  ipcMain.handle('test-alarm-sound', async (_, soundFile: string): Promise<void> => {
-    console.log('アラーム音テスト再生開始:', soundFile)
-    try {
-      await playAlarmSound(soundFile)
-      console.log('アラーム音テスト再生完了')
-    } catch (error) {
-      console.error('アラーム音テスト再生エラー:', error)
-      throw error
-    }
-  })
 
-  // デバッグ用：シンプルなテスト
-  ipcMain.handle('debug-test', async (): Promise<string> => {
-    console.log('🔍 debug-test IPC が呼び出されました')
-    return 'IPC通信成功!'
-  })
-
-  // デバッグ用：手動でcheckAlarmsを実行
-  ipcMain.handle('manual-check-alarms', async (): Promise<void> => {
-    console.log('🔍 手動でcheckAlarmsを実行')
-    console.log('🔍 mainWindow存在確認:', !!mainWindow)
-    console.log('🔍 mainWindow破棄確認:', mainWindow ? mainWindow.isDestroyed() : 'undefined')
-    console.log('🔍 alarmCheckInterval確認:', !!alarmCheckInterval)
-    
-    try {
-      await checkAlarms()
-      console.log('🔍 手動checkAlarms完了')
-    } catch (error: any) {
-      console.error('🔍 手動checkAlarmsエラー:', error)
-      console.error('🔍 エラータイプ:', typeof error)
-      console.error('🔍 エラーメッセージ:', error?.message)
-      console.error('🔍 エラースタック:', error?.stack)
-      throw error
-    }
-  })
 }
 
 // 設定ウィンドウを作成
@@ -515,140 +480,29 @@ function createAlarmWindow(): void {
 }
 
 // アラーム音の再生（メインプロセス）
-const playAlarmSound = async (soundFile: string): Promise<void> => {
-  console.log('🎵 playAlarmSound関数が呼び出されました! soundFile:', soundFile)
-  try {
-    const path = require('path')
-    const fs = require('fs')
-    const { exec } = require('child_process')
-    
-    let soundPath: string
-    if (process.env.NODE_ENV === 'development') {
-      soundPath = path.join(__dirname, '../../src/assets/sounds', soundFile)
-    } else {
-      soundPath = path.join(process.resourcesPath, 'assets', 'sounds', soundFile)
-    }
-    
-    console.log('アラーム音を再生開始:', soundPath)
-    console.log('ファイルが存在するか:', fs.existsSync(soundPath))
-    console.log('プラットフォーム:', process.platform)
-    
-    if (!fs.existsSync(soundPath)) {
-      console.error('音声ファイルが見つかりません:', soundPath)
-      
-      // 代替パスを試してみる
-      const alternativePaths = [
-        path.join(process.resourcesPath, 'app.asar.unpacked', 'src', 'assets', 'sounds', soundFile),
-        path.join(__dirname, '../assets/sounds', soundFile),
-        path.join(__dirname, '../../assets/sounds', soundFile)
-      ]
-      
-      for (const altPath of alternativePaths) {
-        console.log('代替パスを試行:', altPath)
-        if (fs.existsSync(altPath)) {
-          console.log('代替パスでファイルを発見:', altPath)
-          soundPath = altPath
-          break
-        }
-      }
-      
-      if (!fs.existsSync(soundPath)) {
-        console.error('すべての代替パスでファイルが見つかりませんでした')
-        return
-      }
-    }
-    
-    // プラットフォーム別に音声再生
-    return new Promise((resolve, reject) => {
-      let command: string
-      
-      if (process.platform === 'win32') {
-        // Windowsの場合、複数の方法を試す
-        command = `powershell -c "try { (New-Object Media.SoundPlayer '${soundPath}').PlaySync(); Write-Host 'Sound played successfully' } catch { Write-Error $_.Exception.Message }"`
-      } else if (process.platform === 'darwin') {
-        // macOSの場合
-        command = `afplay "${soundPath}"`
-      } else {
-        // Linuxの場合、複数の音声プレイヤーを試す
-        command = `aplay "${soundPath}" || paplay "${soundPath}" || ffplay -nodisp -autoexit "${soundPath}" 2>/dev/null`
-      }
-      
-      console.log('実行するコマンド:', command)
-      
-      exec(command, (error: any, stdout: any, stderr: any) => {
-        if (error) {
-          console.error('音声再生コマンドエラー:', error)
-          console.error('コマンド:', command)
-          console.error('stderr:', stderr)
-          console.error('エラー詳細:', {
-            code: error.code,
-            signal: error.signal,
-            cmd: error.cmd
-          })
-          reject(error)
-        } else {
-          console.log('音声再生成功！')
-          console.log('実行されたコマンド:', command)
-          if (stdout) console.log('stdout:', stdout)
-          if (stderr) console.log('stderr (情報):', stderr)
-          resolve()
-        }
-      })
-    })
-  } catch (error) {
-    console.error('アラーム音の再生に失敗:', error)
-    throw error
-  }
-}
+
 
 // アラームの時間チェック
 const checkAlarms = async (): Promise<void> => {
-  console.log('🔍 checkAlarms 関数開始')
   try {
     // メインウィンドウが破棄されている場合はチェックを停止
     if (!mainWindow || mainWindow.isDestroyed()) {
-      console.log('メインウィンドウが無効なため、アラームチェックを停止します')
       stopAlarmCheck()
       return
     }
 
-    console.log('🔍 アラーム設定読み込み開始')
     const alarmSettings = await loadAlarmSettings()
-    console.log('🔍 アラーム設定読み込み完了:', {
-      hasSettings: !!alarmSettings,
-      alarmsCount: alarmSettings?.alarms?.length || 0,
-      globalAlarmSound: alarmSettings?.globalAlarmSound,
-      globalPreAlarmSound: alarmSettings?.globalPreAlarmSound
-    })
-    
     const now = new Date()
     const currentHour = now.getHours()
     const currentMinute = now.getMinutes()
     const currentSeconds = now.getSeconds()
     const currentTime = now.getTime()
     
-    // デバッグ用：現在時刻とアラーム設定を表示（分が変わった時のみ）
-    if (currentSeconds === 0) {
-      console.log(`現在時刻: ${currentHour}:${String(currentMinute).padStart(2, '0')}`)
-      console.log(`有効なアラーム数: ${alarmSettings.alarms.filter(a => a.enabled).length}`)
-    }
-    
-    // 有効なアラームをチェック
-    console.log('🔍 アラームループ開始準備')
-    console.log('アラーム配列の長さ:', alarmSettings.alarms?.length || 0)
-    console.log('アラーム配列の型:', typeof alarmSettings.alarms)
-    
     for (const alarm of alarmSettings.alarms) {
       try {
-        console.log('📍 アラームループ開始:', alarm.name)
-        if (!alarm.enabled) {
-          console.log('📍 アラーム無効のためスキップ:', alarm.name)
-          continue
-        }
+        if (!alarm.enabled) continue
         
-        console.log('📍 アラームキー生成前')
         const alarmKey = `${alarm.id}_${alarm.hour}_${alarm.minute}`
-        console.log('📍 アラームキー生成完了:', alarmKey)
       
       // 先行アラームのチェック
       if (alarm.preAlarmEnabled && alarmSettings.globalPreAlarmEnabled) {
@@ -665,49 +519,19 @@ const checkAlarms = async (): Promise<void> => {
             !activeAlarms.has(preAlarmKey) &&
             (!recentAlarms.has(preAlarmKey) || currentTime - recentAlarms.get(preAlarmKey)! > 60000)) {
           
-          console.log(`先行アラーム発動: ${alarm.name} (${alarm.hour}:${String(alarm.minute).padStart(2, '0')})`)
-          console.log('📍 先行アラーム発動直後 - ポイント1')
+          console.log(`先行アラーム発動: ${alarm.name}`)
           
-          try {
-            console.log('📍 先行アラーム try ブロック開始 - ポイント2')
-            console.log('🔍 先行アラーム設定を確認中...')
-            console.log('先行アラーム用 alarmSettings:', typeof alarmSettings)
-            console.log('globalPreAlarmSound:', alarmSettings?.globalPreAlarmSound || 'undefined')
-            console.log('globalPreAlarmVolume:', alarmSettings?.globalPreAlarmVolume || 'undefined')
-            
-            activeAlarms.add(preAlarmKey)
-            recentAlarms.set(preAlarmKey, currentTime)
-            console.log('✅ 先行アラームキー設定完了')
-            
-            // 先行アラーム音を再生
-            console.log('===== 先行アラーム音の再生処理開始 =====')
-            console.log('先行アラーム用playAlarmSound関数を呼び出します...')
-            const preAlarmPromise = playAlarmSound(alarmSettings.globalPreAlarmSound)
-            console.log('先行アラーム用playAlarmSound関数が Promise を返しました')
-            preAlarmPromise
-              .then(() => {
-                console.log('先行アラーム音の再生が完了しました')
-              })
-              .catch(err => {
-                console.error('先行アラーム音の再生に失敗:', err)
-              })
-          } catch (error: any) {
-            console.error('❌ 先行アラーム処理中にエラー:', error)
-            console.error('先行アラーム エラースタック:', error?.stack)
-          }
+          activeAlarms.add(preAlarmKey)
+          recentAlarms.set(preAlarmKey, currentTime)
           
           // メインウィンドウに通知
           if (mainWindow && !mainWindow.isDestroyed()) {
-            try {
-              mainWindow.webContents.send('pre-alarm-triggered', {
-                id: alarm.id,
-                name: alarm.name,
-                hour: alarm.hour,
-                minute: alarm.minute
-              })
-            } catch (error) {
-              console.error('先行アラーム通知送信エラー:', error)
-            }
+            mainWindow.webContents.send('pre-alarm-triggered', {
+              id: alarm.id,
+              name: alarm.name,
+              hour: alarm.hour,
+              minute: alarm.minute
+            })
           }
           
           // 10秒後にアクティブリストから削除
@@ -718,56 +542,25 @@ const checkAlarms = async (): Promise<void> => {
       }
       
       // メインアラームのチェック
-      const adjustedSeconds = alarmSettings.globalOffsetSeconds
       if (currentHour === alarm.hour && 
           currentMinute === alarm.minute && 
           currentSeconds < 10 && // 10秒以内
           !activeAlarms.has(alarmKey) &&
           (!recentAlarms.has(alarmKey) || currentTime - recentAlarms.get(alarmKey)! > 60000)) {
         
-        console.log(`アラーム発動: ${alarm.name} (${alarm.hour}:${String(alarm.minute).padStart(2, '0')})`)
-        console.log('📍 アラーム発動直後 - ポイント1')
+        console.log(`アラーム発動: ${alarm.name}`)
         
-        try {
-          console.log('📍 アラーム try ブロック開始 - ポイント2')
-          console.log('🔍 アラーム設定を確認中...')
-          console.log('alarmSettings オブジェクト:', typeof alarmSettings)
-          console.log('globalAlarmSound:', alarmSettings?.globalAlarmSound || 'undefined')
-          console.log('globalVolume:', alarmSettings?.globalVolume || 'undefined')
-          
-          activeAlarms.add(alarmKey)
-          recentAlarms.set(alarmKey, currentTime)
-          console.log('✅ アラームキー設定完了')
-        
-          // アラーム音を再生
-          console.log('===== アラーム音の再生処理開始 =====')
-          console.log('playAlarmSound関数を呼び出します...')
-          const soundPromise = playAlarmSound(alarmSettings.globalAlarmSound)
-          console.log('playAlarmSound関数が Promise を返しました')
-          soundPromise
-            .then(() => {
-              console.log('アラーム音の再生が完了しました')
-            })
-            .catch(err => {
-              console.error('アラーム音の再生に失敗:', err)
-            })
-        } catch (error: any) {
-          console.error('❌ アラーム処理中にエラー:', error)
-          console.error('エラースタック:', error?.stack)
-        }
+        activeAlarms.add(alarmKey)
+        recentAlarms.set(alarmKey, currentTime)
         
         // メインウィンドウに通知
         if (mainWindow && !mainWindow.isDestroyed()) {
-          try {
-            mainWindow.webContents.send('alarm-triggered', {
-              id: alarm.id,
-              name: alarm.name,
-              hour: alarm.hour,
-              minute: alarm.minute
-            })
-          } catch (error) {
-            console.error('アラーム通知送信エラー:', error)
-          }
+          mainWindow.webContents.send('alarm-triggered', {
+            id: alarm.id,
+            name: alarm.name,
+            hour: alarm.hour,
+            minute: alarm.minute
+          })
         }
         
         // 10秒後にアクティブリストから削除
@@ -775,10 +568,8 @@ const checkAlarms = async (): Promise<void> => {
           activeAlarms.delete(alarmKey)
         }, 10000)
       }
-      } catch (loopError: any) {
-        console.error('❌ アラームループ内でエラー:', loopError)
-        console.error('エラーが発生したアラーム:', alarm?.name || 'unknown')
-        console.error('ループエラースタック:', loopError?.stack)
+      } catch (loopError) {
+        console.error('アラームループエラー:', loopError)
       }
     }
     
@@ -789,33 +580,19 @@ const checkAlarms = async (): Promise<void> => {
         recentAlarms.delete(key)
       }
     }
-  } catch (error: any) {
-    console.error('❌ checkAlarms 関数でエラー:', error)
-    console.error('エラータイプ:', typeof error)
-    console.error('エラーメッセージ:', error?.message)
-    console.error('エラースタック:', error?.stack)
-    console.error('エラー詳細:', error)
+  } catch (error) {
+    console.error('checkAlarmsエラー:', error)
   }
 }
 
 // アラームチェック開始
 const startAlarmCheck = (): void => {
-  console.log('🔍 startAlarmCheck 関数開始')
-  
   if (alarmCheckInterval) {
-    console.log('🔍 既存のタイマーをクリア')
     clearInterval(alarmCheckInterval)
   }
   
-  console.log('🔍 setInterval でタイマーを設定中...')
   // 1秒ごとにアラームをチェック
-  alarmCheckInterval = setInterval(() => {
-    console.log('⏰ タイマー実行 - checkAlarms 呼び出し')
-    checkAlarms()
-  }, 1000)
-  
-  console.log('🔍 setInterval 設定完了')
-  console.log('🔍 タイマーID:', alarmCheckInterval)
+  alarmCheckInterval = setInterval(checkAlarms, 1000)
   console.log('アラームチェック開始')
 }
 
@@ -823,17 +600,10 @@ const startAlarmCheck = (): void => {
 
 // このメソッドは、Electronが初期化を終えて、ブラウザウィンドウを作成する準備ができたときに呼び出されます
 app.whenReady().then(async () => {
-  console.log('✅ app.whenReady 開始')
-  console.log('✅ createWindow 呼び出し開始')
   await createWindow()
-  console.log('✅ createWindow 呼び出し完了')
-
-  console.log('✅ startAlarmCheck 呼び出し開始')
+  
   // アラームチェック開始
   startAlarmCheck()
-  console.log('✅ startAlarmCheck 呼び出し完了')
-
-  console.log('✅ app.whenReady 完了')
 
   app.on('activate', async function () {
     // macOSでは、通常、アプリケーションのアイコンがクリックされたときにウィンドウが開いていない場合、

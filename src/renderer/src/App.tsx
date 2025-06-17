@@ -30,6 +30,18 @@ function App() {
   } | null>(null)
   
   const { settings, openSettings, loadSettings, isSettingsOpen } = useSettingsStore()
+
+  // シンプルな音声再生（確実に動作する）
+  const playAlarmAudio = (soundFile: string) => {
+    try {
+      const audio = new Audio(`/sounds/${soundFile}`)
+      audio.volume = 0.7
+      audio.play().catch(err => console.error('音声再生エラー:', err))
+      console.log('🎵 音声再生実行:', soundFile)
+    } catch (error) {
+      console.error('音声再生失敗:', error)
+    }
+  }
   
   console.log('App レンダリング - isSettingsOpen:', isSettingsOpen)
 
@@ -54,6 +66,9 @@ function App() {
         timestamp: Date.now()
       })
       
+      // アラーム音を再生（レンダラープロセス側）
+      playAlarmAudio('alarm-upbeat-piano-and-trumpet.mp3')
+      
       // 5秒後に通知を自動で消す
       setTimeout(() => {
         setAlarmNotification(null)
@@ -69,6 +84,9 @@ function App() {
         minute: alarmData.minute,
         timestamp: Date.now()
       })
+      
+      // 先行アラーム音を再生（レンダラープロセス側）
+      playAlarmAudio('alarm-electric-timer-beeping.mp3')
       
       // 5秒後に通知を自動で消す
       setTimeout(() => {
