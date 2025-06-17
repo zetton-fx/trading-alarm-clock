@@ -225,6 +225,18 @@ async function createWindow(): Promise<void> {
     mainWindow.show()
   })
 
+  // メインウィンドウが閉じられる前の処理
+  mainWindow.on('close', () => {
+    console.log('メインウィンドウが閉じられています')
+    stopAlarmCheck()
+  })
+
+  // メインウィンドウが破棄される前の処理
+  mainWindow.on('closed', () => {
+    console.log('メインウィンドウが破棄されました')
+    stopAlarmCheck()
+  })
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
@@ -239,6 +251,8 @@ async function createWindow(): Promise<void> {
 
   // IPCハンドラーの設定
   ipcMain.on('app-close', () => {
+    console.log('アプリ終了要求を受信')
+    stopAlarmCheck()
     mainWindow.close()
   })
 
@@ -543,6 +557,13 @@ const playAlarmSound = async (soundFile: string): Promise<void> => {
 // アラームの時間チェック
 const checkAlarms = async (): Promise<void> => {
   try {
+    // メインウィンドウが破棄されている場合はチェックを停止
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      console.log('メインウィンドウが無効なため、アラームチェックを停止します')
+      stopAlarmCheck()
+      return
+    }
+
     const alarmSettings = await loadAlarmSettings()
     const now = new Date()
     const currentHour = now.getHours()
@@ -581,13 +602,17 @@ const checkAlarms = async (): Promise<void> => {
           })
           
           // メインウィンドウに通知
-          if (mainWindow) {
-            mainWindow.webContents.send('pre-alarm-triggered', {
-              id: alarm.id,
-              name: alarm.name,
-              hour: alarm.hour,
-              minute: alarm.minute
-            })
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            try {
+              mainWindow.webContents.send('pre-alarm-triggered', {
+                id: alarm.id,
+                name: alarm.name,
+                hour: alarm.hour,
+                minute: alarm.minute
+              })
+            } catch (error) {
+              console.error('先行アラーム通知送信エラー:', error)
+            }
           }
           
           // 10秒後にアクティブリストから削除
@@ -615,13 +640,17 @@ const checkAlarms = async (): Promise<void> => {
         })
         
         // メインウィンドウに通知
-        if (mainWindow) {
-          mainWindow.webContents.send('alarm-triggered', {
-            id: alarm.id,
-            name: alarm.name,
-            hour: alarm.hour,
-            minute: alarm.minute
-          })
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          try {
+            mainWindow.webContents.send('alarm-triggered', {
+              id: alarm.id,
+              name: alarm.name,
+              hour: alarm.hour,
+              minute: alarm.minute
+            })
+          } catch (error) {
+            console.error('アラーム通知送信エラー:', error)
+          }
         }
         
         // 10秒後にアクティブリストから削除
@@ -661,6 +690,10 @@ const stopAlarmCheck = (): void => {
     alarmCheckInterval = null
     console.log('アラームチェック停止')
   }
+  
+  // アクティブなアラームもクリア
+  activeAlarms.clear()
+  console.log('アクティブアラームをクリア')
 }
 
 // このメソッドは、Electronが初期化を終えて、ブラウザウィンドウを作成する準備ができたときに呼び出されます
