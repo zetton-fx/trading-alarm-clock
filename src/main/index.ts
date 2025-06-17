@@ -539,11 +539,19 @@ const playAlarmSound = async (soundFile: string): Promise<void> => {
       exec(command, (error: any, stdout: any, stderr: any) => {
         if (error) {
           console.error('音声再生コマンドエラー:', error)
+          console.error('コマンド:', command)
           console.error('stderr:', stderr)
+          console.error('エラー詳細:', {
+            code: error.code,
+            signal: error.signal,
+            cmd: error.cmd
+          })
           reject(error)
         } else {
-          console.log('音声再生成功')
+          console.log('音声再生成功！')
+          console.log('実行されたコマンド:', command)
           if (stdout) console.log('stdout:', stdout)
+          if (stderr) console.log('stderr (情報):', stderr)
           resolve()
         }
       })
@@ -571,6 +579,12 @@ const checkAlarms = async (): Promise<void> => {
     const currentSeconds = now.getSeconds()
     const currentTime = now.getTime()
     
+    // デバッグ用：現在時刻とアラーム設定を表示（分が変わった時のみ）
+    if (currentSeconds === 0) {
+      console.log(`現在時刻: ${currentHour}:${String(currentMinute).padStart(2, '0')}`)
+      console.log(`有効なアラーム数: ${alarmSettings.alarms.filter(a => a.enabled).length}`)
+    }
+    
     // 有効なアラームをチェック
     for (const alarm of alarmSettings.alarms) {
       if (!alarm.enabled) continue
@@ -593,13 +607,20 @@ const checkAlarms = async (): Promise<void> => {
             (!recentAlarms.has(preAlarmKey) || currentTime - recentAlarms.get(preAlarmKey)! > 60000)) {
           
           console.log(`先行アラーム発動: ${alarm.name} (${alarm.hour}:${String(alarm.minute).padStart(2, '0')})`)
+          console.log('使用する先行アラーム音声ファイル:', alarmSettings.globalPreAlarmSound)
+          console.log('先行アラームボリューム設定:', alarmSettings.globalPreAlarmVolume)
           activeAlarms.add(preAlarmKey)
           recentAlarms.set(preAlarmKey, currentTime)
           
           // 先行アラーム音を再生
-          playAlarmSound(alarmSettings.globalPreAlarmSound).catch(err => {
-            console.error('先行アラーム音の再生に失敗:', err)
-          })
+          console.log('先行アラーム音の再生を開始します...')
+          playAlarmSound(alarmSettings.globalPreAlarmSound)
+            .then(() => {
+              console.log('先行アラーム音の再生が完了しました')
+            })
+            .catch(err => {
+              console.error('先行アラーム音の再生に失敗:', err)
+            })
           
           // メインウィンドウに通知
           if (mainWindow && !mainWindow.isDestroyed()) {
@@ -631,13 +652,20 @@ const checkAlarms = async (): Promise<void> => {
           (!recentAlarms.has(alarmKey) || currentTime - recentAlarms.get(alarmKey)! > 60000)) {
         
         console.log(`アラーム発動: ${alarm.name} (${alarm.hour}:${String(alarm.minute).padStart(2, '0')})`)
+        console.log('使用する音声ファイル:', alarmSettings.globalAlarmSound)
+        console.log('ボリューム設定:', alarmSettings.globalVolume)
         activeAlarms.add(alarmKey)
         recentAlarms.set(alarmKey, currentTime)
         
         // アラーム音を再生
-        playAlarmSound(alarmSettings.globalAlarmSound).catch(err => {
-          console.error('アラーム音の再生に失敗:', err)
-        })
+        console.log('アラーム音の再生を開始します...')
+        playAlarmSound(alarmSettings.globalAlarmSound)
+          .then(() => {
+            console.log('アラーム音の再生が完了しました')
+          })
+          .catch(err => {
+            console.error('アラーム音の再生に失敗:', err)
+          })
         
         // メインウィンドウに通知
         if (mainWindow && !mainWindow.isDestroyed()) {
