@@ -404,14 +404,27 @@ async function createWindow(): Promise<void> {
     }
   })
 
+  // デバッグ用：シンプルなテスト
+  ipcMain.handle('debug-test', async (): Promise<string> => {
+    console.log('🔍 debug-test IPC が呼び出されました')
+    return 'IPC通信成功!'
+  })
+
   // デバッグ用：手動でcheckAlarmsを実行
   ipcMain.handle('manual-check-alarms', async (): Promise<void> => {
     console.log('🔍 手動でcheckAlarmsを実行')
+    console.log('🔍 mainWindow存在確認:', !!mainWindow)
+    console.log('🔍 mainWindow破棄確認:', mainWindow ? mainWindow.isDestroyed() : 'undefined')
+    console.log('🔍 alarmCheckInterval確認:', !!alarmCheckInterval)
+    
     try {
       await checkAlarms()
       console.log('🔍 手動checkAlarms完了')
-    } catch (error) {
+    } catch (error: any) {
       console.error('🔍 手動checkAlarmsエラー:', error)
+      console.error('🔍 エラータイプ:', typeof error)
+      console.error('🔍 エラーメッセージ:', error?.message)
+      console.error('🔍 エラースタック:', error?.stack)
       throw error
     }
   })
