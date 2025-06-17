@@ -40,5 +40,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAssetPath: (assetPath: string): Promise<string> => ipcRenderer.invoke('get-asset-path', assetPath),
   
   // デバッグ用
-  testAlarmSound: (soundFile: string): Promise<void> => ipcRenderer.invoke('test-alarm-sound', soundFile)
+  testAlarmSound: (soundFile: string): Promise<void> => ipcRenderer.invoke('test-alarm-sound', soundFile),
+  manualCheckAlarms: (): Promise<void> => ipcRenderer.invoke('manual-check-alarms')
 }) 

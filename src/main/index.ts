@@ -403,6 +403,18 @@ async function createWindow(): Promise<void> {
       throw error
     }
   })
+
+  // デバッグ用：手動でcheckAlarmsを実行
+  ipcMain.handle('manual-check-alarms', async (): Promise<void> => {
+    console.log('🔍 手動でcheckAlarmsを実行')
+    try {
+      await checkAlarms()
+      console.log('🔍 手動checkAlarms完了')
+    } catch (error) {
+      console.error('🔍 手動checkAlarmsエラー:', error)
+      throw error
+    }
+  })
 }
 
 // 設定ウィンドウを作成
@@ -775,12 +787,22 @@ const checkAlarms = async (): Promise<void> => {
 
 // アラームチェック開始
 const startAlarmCheck = (): void => {
+  console.log('🔍 startAlarmCheck 関数開始')
+  
   if (alarmCheckInterval) {
+    console.log('🔍 既存のタイマーをクリア')
     clearInterval(alarmCheckInterval)
   }
   
+  console.log('🔍 setInterval でタイマーを設定中...')
   // 1秒ごとにアラームをチェック
-  alarmCheckInterval = setInterval(checkAlarms, 1000)
+  alarmCheckInterval = setInterval(() => {
+    console.log('⏰ タイマー実行 - checkAlarms 呼び出し')
+    checkAlarms()
+  }, 1000)
+  
+  console.log('🔍 setInterval 設定完了')
+  console.log('🔍 タイマーID:', alarmCheckInterval)
   console.log('アラームチェック開始')
 }
 
