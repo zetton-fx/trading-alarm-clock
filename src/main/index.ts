@@ -578,6 +578,7 @@ const playAlarmSound = async (soundFile: string): Promise<void> => {
 
 // アラームの時間チェック
 const checkAlarms = async (): Promise<void> => {
+  console.log('🔍 checkAlarms 関数開始')
   try {
     // メインウィンドウが破棄されている場合はチェックを停止
     if (!mainWindow || mainWindow.isDestroyed()) {
@@ -586,6 +587,7 @@ const checkAlarms = async (): Promise<void> => {
       return
     }
 
+    console.log('🔍 アラーム設定読み込み開始')
     const alarmSettings = await loadAlarmSettings()
     console.log('🔍 アラーム設定読み込み完了:', {
       hasSettings: !!alarmSettings,
@@ -607,10 +609,21 @@ const checkAlarms = async (): Promise<void> => {
     }
     
     // 有効なアラームをチェック
+    console.log('🔍 アラームループ開始準備')
+    console.log('アラーム配列の長さ:', alarmSettings.alarms?.length || 0)
+    console.log('アラーム配列の型:', typeof alarmSettings.alarms)
+    
     for (const alarm of alarmSettings.alarms) {
-      if (!alarm.enabled) continue
-      
-      const alarmKey = `${alarm.id}_${alarm.hour}_${alarm.minute}`
+      try {
+        console.log('📍 アラームループ開始:', alarm.name)
+        if (!alarm.enabled) {
+          console.log('📍 アラーム無効のためスキップ:', alarm.name)
+          continue
+        }
+        
+        console.log('📍 アラームキー生成前')
+        const alarmKey = `${alarm.id}_${alarm.hour}_${alarm.minute}`
+        console.log('📍 アラームキー生成完了:', alarmKey)
       
       // 先行アラームのチェック
       if (alarm.preAlarmEnabled && alarmSettings.globalPreAlarmEnabled) {
@@ -628,8 +641,10 @@ const checkAlarms = async (): Promise<void> => {
             (!recentAlarms.has(preAlarmKey) || currentTime - recentAlarms.get(preAlarmKey)! > 60000)) {
           
           console.log(`先行アラーム発動: ${alarm.name} (${alarm.hour}:${String(alarm.minute).padStart(2, '0')})`)
+          console.log('📍 先行アラーム発動直後 - ポイント1')
           
           try {
+            console.log('📍 先行アラーム try ブロック開始 - ポイント2')
             console.log('🔍 先行アラーム設定を確認中...')
             console.log('先行アラーム用 alarmSettings:', typeof alarmSettings)
             console.log('globalPreAlarmSound:', alarmSettings?.globalPreAlarmSound || 'undefined')
@@ -686,8 +701,10 @@ const checkAlarms = async (): Promise<void> => {
           (!recentAlarms.has(alarmKey) || currentTime - recentAlarms.get(alarmKey)! > 60000)) {
         
         console.log(`アラーム発動: ${alarm.name} (${alarm.hour}:${String(alarm.minute).padStart(2, '0')})`)
+        console.log('📍 アラーム発動直後 - ポイント1')
         
         try {
+          console.log('📍 アラーム try ブロック開始 - ポイント2')
           console.log('🔍 アラーム設定を確認中...')
           console.log('alarmSettings オブジェクト:', typeof alarmSettings)
           console.log('globalAlarmSound:', alarmSettings?.globalAlarmSound || 'undefined')
@@ -733,6 +750,11 @@ const checkAlarms = async (): Promise<void> => {
           activeAlarms.delete(alarmKey)
         }, 10000)
       }
+      } catch (loopError: any) {
+        console.error('❌ アラームループ内でエラー:', loopError)
+        console.error('エラーが発生したアラーム:', alarm?.name || 'unknown')
+        console.error('ループエラースタック:', loopError?.stack)
+      }
     }
     
     // 古いアラーム履歴を削除（1時間以上前）
@@ -742,8 +764,12 @@ const checkAlarms = async (): Promise<void> => {
         recentAlarms.delete(key)
       }
     }
-  } catch (error) {
-    console.error('アラームチェック中にエラー:', error)
+  } catch (error: any) {
+    console.error('❌ checkAlarms 関数でエラー:', error)
+    console.error('エラータイプ:', typeof error)
+    console.error('エラーメッセージ:', error?.message)
+    console.error('エラースタック:', error?.stack)
+    console.error('エラー詳細:', error)
   }
 }
 
@@ -762,10 +788,17 @@ const startAlarmCheck = (): void => {
 
 // このメソッドは、Electronが初期化を終えて、ブラウザウィンドウを作成する準備ができたときに呼び出されます
 app.whenReady().then(async () => {
+  console.log('✅ app.whenReady 開始')
+  console.log('✅ createWindow 呼び出し開始')
   await createWindow()
-  
+  console.log('✅ createWindow 呼び出し完了')
+
+  console.log('✅ startAlarmCheck 呼び出し開始')
   // アラームチェック開始
   startAlarmCheck()
+  console.log('✅ startAlarmCheck 呼び出し完了')
+
+  console.log('✅ app.whenReady 完了')
 
   app.on('activate', async function () {
     // macOSでは、通常、アプリケーションのアイコンがクリックされたときにウィンドウが開いていない場合、
