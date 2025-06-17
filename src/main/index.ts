@@ -75,6 +75,19 @@ let alarmCheckInterval: NodeJS.Timeout | null = null
 let activeAlarms: Set<string> = new Set() // 現在鳴っているアラーム
 let recentAlarms: Map<string, number> = new Map() // 最近鳴ったアラーム（重複防止）
 
+// アラームチェック停止（先に宣言）
+const stopAlarmCheck = (): void => {
+  if (alarmCheckInterval) {
+    clearInterval(alarmCheckInterval)
+    alarmCheckInterval = null
+    console.log('アラームチェック停止')
+  }
+  
+  // アクティブなアラームもクリア
+  activeAlarms.clear()
+  console.log('アクティブアラームをクリア')
+}
+
 // Windows用タイトルバー非表示処理
 const applyWindowsTitleBarHiding = (window: BrowserWindow, delay: number = 0): void => {
   if (process.platform !== 'win32') return
@@ -478,6 +491,7 @@ function createAlarmWindow(): void {
 
 // アラーム音の再生（メインプロセス）
 const playAlarmSound = async (soundFile: string): Promise<void> => {
+  console.log('🎵 playAlarmSound関数が呼び出されました! soundFile:', soundFile)
   try {
     const path = require('path')
     const fs = require('fs')
@@ -613,14 +627,21 @@ const checkAlarms = async (): Promise<void> => {
           recentAlarms.set(preAlarmKey, currentTime)
           
           // 先行アラーム音を再生
-          console.log('先行アラーム音の再生を開始します...')
-          playAlarmSound(alarmSettings.globalPreAlarmSound)
-            .then(() => {
-              console.log('先行アラーム音の再生が完了しました')
-            })
-            .catch(err => {
-              console.error('先行アラーム音の再生に失敗:', err)
-            })
+          console.log('===== 先行アラーム音の再生処理開始 =====')
+          try {
+            console.log('先行アラーム用playAlarmSound関数を呼び出します...')
+            const preAlarmPromise = playAlarmSound(alarmSettings.globalPreAlarmSound)
+            console.log('先行アラーム用playAlarmSound関数が Promise を返しました')
+            preAlarmPromise
+              .then(() => {
+                console.log('先行アラーム音の再生が完了しました')
+              })
+              .catch(err => {
+                console.error('先行アラーム音の再生に失敗:', err)
+              })
+          } catch (syncError) {
+            console.error('先行アラーム用playAlarmSound関数の同期呼び出しでエラー:', syncError)
+          }
           
           // メインウィンドウに通知
           if (mainWindow && !mainWindow.isDestroyed()) {
@@ -657,15 +678,22 @@ const checkAlarms = async (): Promise<void> => {
         activeAlarms.add(alarmKey)
         recentAlarms.set(alarmKey, currentTime)
         
-        // アラーム音を再生
-        console.log('アラーム音の再生を開始します...')
-        playAlarmSound(alarmSettings.globalAlarmSound)
-          .then(() => {
-            console.log('アラーム音の再生が完了しました')
-          })
-          .catch(err => {
-            console.error('アラーム音の再生に失敗:', err)
-          })
+                // アラーム音を再生
+        console.log('===== アラーム音の再生処理開始 =====')
+        try {
+          console.log('playAlarmSound関数を呼び出します...')
+          const soundPromise = playAlarmSound(alarmSettings.globalAlarmSound)
+          console.log('playAlarmSound関数が Promise を返しました')
+          soundPromise
+            .then(() => {
+              console.log('アラーム音の再生が完了しました')
+            })
+            .catch(err => {
+              console.error('アラーム音の再生に失敗:', err)
+            })
+        } catch (syncError) {
+          console.error('playAlarmSound関数の同期呼び出しでエラー:', syncError)
+        }
         
         // メインウィンドウに通知
         if (mainWindow && !mainWindow.isDestroyed()) {
@@ -711,18 +739,7 @@ const startAlarmCheck = (): void => {
   console.log('アラームチェック開始')
 }
 
-// アラームチェック停止
-const stopAlarmCheck = (): void => {
-  if (alarmCheckInterval) {
-    clearInterval(alarmCheckInterval)
-    alarmCheckInterval = null
-    console.log('アラームチェック停止')
-  }
-  
-  // アクティブなアラームもクリア
-  activeAlarms.clear()
-  console.log('アクティブアラームをクリア')
-}
+
 
 // このメソッドは、Electronが初期化を終えて、ブラウザウィンドウを作成する準備ができたときに呼び出されます
 app.whenReady().then(async () => {
