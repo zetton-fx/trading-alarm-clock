@@ -5,6 +5,8 @@ import AlarmWindow from './components/AlarmWindow'
 import { sizeMapping } from '../../shared/types/settings'
 
 function App() {
+
+
   // URLフラグメントを確認して設定ウィンドウかアラームウィンドウかどうかを判定
   const isSettingsWindow = window.location.hash === '#settings'
   const isAlarmWindow = window.location.hash === '#alarm'
@@ -28,46 +30,40 @@ function App() {
     minute: number
     timestamp: number
   } | null>(null)
+  const [alarmTimeoutId, setAlarmTimeoutId] = useState<NodeJS.Timeout | null>(null)
   
   const { settings, openSettings, loadSettings, isSettingsOpen } = useSettingsStore()
 
-  // 音声を事前読み込みして autoplay policy に対応
+  // 音声管理
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null)
-  const [isAudioEnabled, setIsAudioEnabled] = useState(false)
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null)
 
-  // ページ読み込み時に音声コンテキストを準備
+  // ページ読み込み時に音声コンテキストを即座に準備
   useEffect(() => {
     const initAudio = () => {
       try {
         const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
         setAudioContext(ctx)
-        setIsAudioEnabled(true)
         console.log('音声コンテキスト初期化完了')
       } catch (error) {
         console.error('音声コンテキスト初期化失敗:', error)
       }
     }
 
-    // 最初のクリックで音声を有効化
-    const enableAudio = () => {
-      initAudio()
-      document.removeEventListener('click', enableAudio)
-      document.removeEventListener('keydown', enableAudio)
-    }
-
-    document.addEventListener('click', enableAudio)
-    document.addEventListener('keydown', enableAudio)
-    
-    return () => {
-      document.removeEventListener('click', enableAudio)
-      document.removeEventListener('keydown', enableAudio)
-    }
+    // Electronアプリでは即座に音声を有効化
+    initAudio()
   }, [])
 
   // 確実に音声を再生する関数（Electron autoplay policy対応）
   const playAlarmAudio = async (soundFile: string) => {
     try {
       console.log('音声再生開始:', soundFile)
+      
+      // 既存の音声を停止
+      if (currentAudio) {
+        currentAudio.pause()
+        currentAudio.currentTime = 0
+      }
       
       // 複数の音声再生手法を試行
       const audioSources = [
@@ -83,6 +79,7 @@ function App() {
           const audio = new Audio(src)
           audio.volume = 0.8
           audio.preload = 'auto'
+          audio.loop = true // ループ再生でアラームらしく
           
           // AudioContextがある場合は必ずresumeする
           if (audioContext && audioContext.state === 'suspended') {
@@ -92,6 +89,7 @@ function App() {
           
           // 音声を即座に再生
           await audio.play()
+          setCurrentAudio(audio) // 現在の音声を保存
           console.log('音声再生成功:', src)
           return // 成功したら他の試行をスキップ
           
@@ -105,6 +103,7 @@ function App() {
       console.log('全ての音声ソース試行が失敗、最後の手段を実行')
       const fallbackAudio = new Audio()
       fallbackAudio.volume = 0.8
+      fallbackAudio.loop = true
       fallbackAudio.src = `/sounds/${soundFile}`
       
       // 強制的に音声コンテキストを作成・再開
@@ -118,6 +117,7 @@ function App() {
       
       // 最後の試行
       await fallbackAudio.play()
+      setCurrentAudio(fallbackAudio)
       console.log('fallback音声再生成功')
       
     } catch (error) {
@@ -148,6 +148,16 @@ function App() {
       }
     }
   }
+
+  // 音声を停止する関数
+  const stopAlarmAudio = () => {
+    if (currentAudio) {
+      currentAudio.pause()
+      currentAudio.currentTime = 0
+      setCurrentAudio(null)
+      console.log('音声停止')
+    }
+  }
   
   console.log('App レンダリング - isSettingsOpen:', isSettingsOpen)
 
@@ -164,6 +174,12 @@ function App() {
     // アラーム通知の監視
     const handleAlarmTriggered = (alarmData: any) => {
       console.log('アラーム発動:', alarmData)
+      
+      // 既存のタイマーをクリア
+      if (alarmTimeoutId) {
+        clearTimeout(alarmTimeoutId)
+      }
+      
       setAlarmNotification({
         type: 'alarm',
         name: alarmData.name,
@@ -175,14 +191,23 @@ function App() {
       // アラーム音を再生（レンダラープロセス側）
       playAlarmAudio('alarm-upbeat-piano-and-trumpet.mp3')
       
-      // 5秒後に通知を自動で消す
-      setTimeout(() => {
+      // 30秒後に通知を自動で消す（音声も停止）
+      const timeoutId = setTimeout(() => {
+        stopAlarmAudio()
         setAlarmNotification(null)
-      }, 5000)
+        setAlarmTimeoutId(null)
+      }, 30000)
+      setAlarmTimeoutId(timeoutId)
     }
 
     const handlePreAlarmTriggered = (alarmData: any) => {
       console.log('先行アラーム発動:', alarmData)
+      
+      // 既存のタイマーをクリア
+      if (alarmTimeoutId) {
+        clearTimeout(alarmTimeoutId)
+      }
+      
       setAlarmNotification({
         type: 'pre-alarm',
         name: alarmData.name,
@@ -194,10 +219,13 @@ function App() {
       // 先行アラーム音を再生（レンダラープロセス側）
       playAlarmAudio('alarm-electric-timer-beeping.mp3')
       
-      // 5秒後に通知を自動で消す
-      setTimeout(() => {
+      // 15秒後に通知を自動で消す（音声も停止）
+      const timeoutId = setTimeout(() => {
+        stopAlarmAudio()
         setAlarmNotification(null)
-      }, 5000)
+        setAlarmTimeoutId(null)
+      }, 15000)
+      setAlarmTimeoutId(timeoutId)
     }
 
     // IPCイベントリスナーを登録
@@ -395,21 +423,7 @@ function App() {
               className={`px-8 py-4 rounded-lg border-2 shadow-lg ${getFontClass()}`}
               style={getBoxStyle()}
             >
-              {/* 音声有効化メッセージ */}
-              {!isAudioEnabled && (
-                <div 
-                  className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs px-2 py-1 rounded"
-                  style={{
-                    background: 'rgba(255, 255, 0, 0.9)',
-                    color: '#000',
-                    fontSize: '10px',
-                    whiteSpace: 'nowrap',
-                    animation: 'blink 1s infinite'
-                  }}
-                >
-                  クリックして音声を有効化
-                </div>
-              )}
+
               
               {date && (
                 <>
@@ -447,38 +461,58 @@ function App() {
           </div>
         </div>
 
-        {/* アラーム通知 */}
+        {/* シンプルなアラーム通知 */}
         {alarmNotification && (
-          <div className="fixed top-4 right-4 z-50 animate-bounce">
-            <div className={`px-6 py-4 rounded-lg shadow-lg border-2 ${
-              alarmNotification.type === 'alarm' 
-                ? 'bg-red-500 border-red-600 text-white' 
-                : 'bg-yellow-500 border-yellow-600 text-black'
-            }`}>
-              <div className="flex items-center gap-3">
-                <div className="text-2xl">
-                  {alarmNotification.type === 'alarm' ? '🔔' : '⏰'}
-                </div>
-                <div>
-                  <div className="font-bold text-lg">
-                    {alarmNotification.type === 'alarm' ? 'アラーム！' : '先行アラーム'}
-                  </div>
-                  <div className="text-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="relative w-full h-full flex items-center justify-center">
+              
+              {/* ミニマルなアラーム通知 */}
+              <div 
+                className="relative rounded-xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-700"
+                style={{
+                  width: Math.min(currentSizeSettings.windowWidth * 0.5, 180),
+                  padding: Math.max(currentSizeSettings.windowWidth * 0.04, 20),
+                  backdropFilter: 'blur(20px)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)'
+                }}
+              >
+                
+                {/* アラーム名と時刻 */}
+                <div className="text-center">
+                  <p className="text-gray-600 dark:text-gray-400 font-medium mb-3"
+                     style={{ 
+                       fontSize: Math.min(currentSizeSettings.windowWidth * 0.032, 13),
+                       lineHeight: '1.2'
+                     }}
+                  >
                     {alarmNotification.name}
-                  </div>
-                  <div className="text-sm">
+                  </p>
+                  
+                  <p className="font-mono font-light text-gray-900 dark:text-gray-100 mb-4"
+                     style={{ fontSize: Math.min(currentSizeSettings.windowWidth * 0.08, 32) }}
+                  >
                     {String(alarmNotification.hour).padStart(2, '0')}:
                     {String(alarmNotification.minute).padStart(2, '0')}
-                  </div>
+                  </p>
                 </div>
+                
+                {/* シンプルなボタン */}
                 <button
-                  onClick={() => setAlarmNotification(null)}
-                  className="ml-4 w-8 h-8 flex items-center justify-center bg-black bg-opacity-20 hover:bg-opacity-40 rounded-full transition-colors"
-                  title="閉じる"
+                  onClick={() => {
+                    if (alarmTimeoutId) {
+                      clearTimeout(alarmTimeoutId)
+                      setAlarmTimeoutId(null)
+                    }
+                    stopAlarmAudio()
+                    setAlarmNotification(null)
+                  }}
+                  className="w-full rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium transition-all duration-200 hover:bg-gray-800 dark:hover:bg-gray-100 active:scale-95"
+                  style={{ 
+                    padding: `${Math.max(currentSizeSettings.windowHeight * 0.02, 10)}px`,
+                    fontSize: Math.min(currentSizeSettings.windowWidth * 0.04, 16)
+                  }}
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
-                  </svg>
+                  OK
                 </button>
               </div>
             </div>

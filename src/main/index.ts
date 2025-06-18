@@ -20,11 +20,19 @@ const loadSettings = async (): Promise<AppSettings> => {
     const settingsPath = getSettingsPath()
     const data = await fs.readFile(settingsPath, 'utf-8')
     const parsedSettings = JSON.parse(data)
+    console.log('設定ファイルを読み込みました:', settingsPath)
     // デフォルト設定とマージして、新しいプロパティがあっても対応
     return { ...defaultSettings, ...parsedSettings }
-  } catch (error) {
-    console.log('設定ファイルが見つからないかエラーが発生しました。デフォルト設定を使用します:', error)
-    return defaultSettings
+  } catch (error: any) {
+    if (error.code === 'ENOENT') {
+      console.log('初回起動：設定ファイルを作成します')
+      // 初回起動時に設定ファイルを作成
+      await saveSettings(defaultSettings)
+      return defaultSettings
+    } else {
+      console.log('設定ファイルの読み込み中にエラーが発生しました。デフォルト設定を使用します:', error.message)
+      return defaultSettings
+    }
   }
 }
 
@@ -34,11 +42,19 @@ const loadAlarmSettings = async (): Promise<AlarmSettings> => {
     const alarmSettingsPath = getAlarmSettingsPath()
     const data = await fs.readFile(alarmSettingsPath, 'utf-8')
     const parsedSettings = JSON.parse(data)
+    console.log('アラーム設定ファイルを読み込みました:', alarmSettingsPath)
     // デフォルト設定とマージして、新しいプロパティがあっても対応
     return { ...defaultAlarmSettings, ...parsedSettings }
-  } catch (error) {
-    console.log('アラーム設定ファイルが見つからないかエラーが発生しました。デフォルト設定を使用します:', error)
-    return defaultAlarmSettings
+  } catch (error: any) {
+    if (error.code === 'ENOENT') {
+      console.log('初回起動：アラーム設定ファイルを作成します')
+      // 初回起動時にアラーム設定ファイルを作成
+      await saveAlarmSettings(defaultAlarmSettings)
+      return defaultAlarmSettings
+    } else {
+      console.log('アラーム設定ファイルの読み込み中にエラーが発生しました。デフォルト設定を使用します:', error.message)
+      return defaultAlarmSettings
+    }
   }
 }
 
@@ -46,6 +62,12 @@ const loadAlarmSettings = async (): Promise<AlarmSettings> => {
 const saveSettings = async (settings: AppSettings): Promise<void> => {
   try {
     const settingsPath = getSettingsPath()
+    
+    // ディレクトリが存在しない場合は作成
+    const path = require('path')
+    const settingsDir = path.dirname(settingsPath)
+    await fs.mkdir(settingsDir, { recursive: true })
+    
     await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2), 'utf-8')
     console.log('設定を保存しました:', settingsPath)
   } catch (error) {
@@ -58,6 +80,12 @@ const saveSettings = async (settings: AppSettings): Promise<void> => {
 const saveAlarmSettings = async (settings: AlarmSettings): Promise<void> => {
   try {
     const alarmSettingsPath = getAlarmSettingsPath()
+    
+    // ディレクトリが存在しない場合は作成
+    const path = require('path')
+    const settingsDir = path.dirname(alarmSettingsPath)
+    await fs.mkdir(settingsDir, { recursive: true })
+    
     await fs.writeFile(alarmSettingsPath, JSON.stringify(settings, null, 2), 'utf-8')
     console.log('アラーム設定を保存しました:', alarmSettingsPath)
   } catch (error) {
@@ -603,6 +631,9 @@ const startAlarmCheck = (): void => {
 
 // このメソッドは、Electronが初期化を終えて、ブラウザウィンドウを作成する準備ができたときに呼び出されます
 app.whenReady().then(async () => {
+  console.log('Electron アプリケーション起動中...')
+  console.log('設定ディレクトリ:', app.getPath('userData'))
+  
   await createWindow()
   
   // アラームチェック開始
