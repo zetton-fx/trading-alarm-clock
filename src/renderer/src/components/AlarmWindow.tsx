@@ -25,6 +25,7 @@ function AlarmWindow() {
   const [showBulkImport, setShowBulkImport] = useState(false)
   const [bulkImportText, setBulkImportText] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isAlarmSettingsExpanded, setIsAlarmSettingsExpanded] = useState(false)
 
   useEffect(() => {
     loadAlarmSettings()
@@ -493,213 +494,218 @@ function AlarmWindow() {
         <div className="px-6 py-4 overflow-auto">
           <div className="max-w-4xl mx-auto">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 先行アラーム設定 */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-700 mb-4">先行アラーム設定</h2>
-                <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        アラート音
-                      </label>
-                      <div className="flex gap-2">
-                        <select
-                          value={settings.globalPreAlarmSound}
-                          onChange={(e) => updateGlobalSettings({ globalPreAlarmSound: e.target.value })}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          {alarmSounds.map((sound) => (
-                            <option key={sound.value} value={sound.value}>
-                              {sound.label}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          onClick={async () => {
-                            if (currentAudio && currentAudioType === 'preAlarm') {
-                              stopCurrentAudio()
-                            } else {
-                              // メインプロセスの音声再生をテスト
-                              try {
-                                console.log('メインプロセスの音声再生をテスト:', settings.globalPreAlarmSound)
-                                await window.electronAPI.testAlarmSound(settings.globalPreAlarmSound)
-                              } catch (error) {
-                                console.error('メインプロセスの音声再生テストエラー:', error)
-                                // フォールバック：ブラウザの音声再生を試す
-                                playSound(settings.globalPreAlarmSound, settings.globalPreAlarmVolume, 'preAlarm')
-                              }
-                            }
-                          }}
-                          className={`px-3 py-2 ${(currentAudio && currentAudioType === 'preAlarm') ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} text-white rounded-md transition-colors flex items-center gap-1`}
-                          title={(currentAudio && currentAudioType === 'preAlarm') ? "音を停止" : "音を確認"}
-                        >
-                          {(currentAudio && currentAudioType === 'preAlarm') ? (
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M6,6H18V18H6V6Z" />
-                            </svg>
-                          ) : (
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M8,5.14V19.14L19,12.14L8,5.14Z" />
-                            </svg>
-                          )}
-                          {(currentAudio && currentAudioType === 'preAlarm') ? '停止' : '確認'}
-                        </button>
+              {/* アラーム設定 */}
+              <div className="bg-white rounded-lg shadow-md p-6 md:col-span-2">
+                <div 
+                  className="flex items-center justify-between cursor-pointer hover:bg-gray-50 -m-2 p-2 rounded-md transition-colors"
+                  onClick={() => setIsAlarmSettingsExpanded(!isAlarmSettingsExpanded)}
+                >
+                  <h2 className="text-xl font-semibold text-gray-700">アラーム設定</h2>
+                  <svg 
+                    className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
+                      isAlarmSettingsExpanded ? 'rotate-180' : ''
+                    }`} 
+                    viewBox="0 0 24 24" 
+                    fill="currentColor"
+                  >
+                    <path d="M7,10L12,15L17,10H7Z" />
+                  </svg>
+                </div>
+                
+                {isAlarmSettingsExpanded && (
+                  <div className="mt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* 先行アラーム設定 */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium text-gray-700 border-b border-gray-200 pb-2">先行アラーム設定</h3>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            アラート音
+                          </label>
+                          <div className="flex gap-2">
+                            <select
+                              value={settings.globalPreAlarmSound}
+                              onChange={(e) => updateGlobalSettings({ globalPreAlarmSound: e.target.value })}
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              {alarmSounds.map((sound) => (
+                                <option key={sound.value} value={sound.value}>
+                                  {sound.label}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              onClick={() => {
+                                if (currentAudio && currentAudioType === 'preAlarm') {
+                                  stopCurrentAudio()
+                                } else {
+                                  playSound(settings.globalPreAlarmSound, settings.globalPreAlarmVolume, 'preAlarm')
+                                }
+                              }}
+                              className={`px-3 py-2 ${(currentAudio && currentAudioType === 'preAlarm') ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} text-white rounded-md transition-colors flex items-center gap-1`}
+                              title={(currentAudio && currentAudioType === 'preAlarm') ? "音を停止" : "音を確認"}
+                            >
+                              {(currentAudio && currentAudioType === 'preAlarm') ? (
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M6,6H18V18H6V6Z" />
+                                </svg>
+                              ) : (
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M8,5.14V19.14L19,12.14L8,5.14Z" />
+                                </svg>
+                              )}
+                              {(currentAudio && currentAudioType === 'preAlarm') ? '停止' : '確認'}
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            ボリューム: {settings.globalPreAlarmVolume}%
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={settings.globalPreAlarmVolume}
+                            onChange={(e) => updateGlobalSettings({ globalPreAlarmVolume: parseInt(e.target.value) })}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <span className="relative group">
+                              <span className="cursor-help border-b border-dotted border-gray-400">
+                                アラーム設定時刻の何分前に鳴らす: {settings.globalPreAlarmMinutes}分
+                              </span>
+                              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-0 pointer-events-none w-72 z-10">
+                                先行アラームは事前準備のための機能です。<br />
+                                例: 21:30の指標なら21:20に先行アラームで<br />
+                                「もうすぐ指標です」と通知し、準備時間を確保。<br />
+                                21:30に本アラームで「指標が発表」を通知します。
+                                <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                              </div>
+                            </span>
+                          </label>
+                          <input
+                            type="range"
+                            min="1"
+                            max="30"
+                            value={settings.globalPreAlarmMinutes}
+                            onChange={(e) => updateGlobalSettings({ globalPreAlarmMinutes: parseInt(e.target.value) })}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={settings.globalAutoEnablePreAlarm}
+                              onChange={(e) => updateGlobalSettings({ globalAutoEnablePreAlarm: e.target.checked })}
+                              className="mr-2"
+                            />
+                            <span className="text-sm font-medium text-gray-700">
+                              アラーム追加時に先行アラームを自動でONにする
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* メインアラーム設定 */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium text-gray-700 border-b border-gray-200 pb-2">メインアラーム設定</h3>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            アラート音
+                          </label>
+                          <div className="flex gap-2">
+                            <select
+                              value={settings.globalAlarmSound}
+                              onChange={(e) => updateGlobalSettings({ globalAlarmSound: e.target.value })}
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              {alarmSounds.map((sound) => (
+                                <option key={sound.value} value={sound.value}>
+                                  {sound.label}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              onClick={() => {
+                                if (currentAudio && currentAudioType === 'alarm') {
+                                  stopCurrentAudio()
+                                } else {
+                                  playSound(settings.globalAlarmSound, settings.globalVolume, 'alarm')
+                                }
+                              }}
+                              className={`px-3 py-2 ${currentAudio && currentAudioType === 'alarm' ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} text-white rounded-md transition-colors flex items-center gap-1`}
+                              title={currentAudio && currentAudioType === 'alarm' ? "音を停止" : "音を確認"}
+                            >
+                              {currentAudio && currentAudioType === 'alarm' ? (
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M6,6H18V18H6V6Z" />
+                                </svg>
+                              ) : (
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M8,5.14V19.14L19,12.14L8,5.14Z" />
+                                </svg>
+                              )}
+                              {currentAudio && currentAudioType === 'alarm' ? '停止' : '確認'}
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            ボリューム: {settings.globalVolume}%
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={settings.globalVolume}
+                            onChange={(e) => updateGlobalSettings({ globalVolume: parseInt(e.target.value) })}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <span className="relative group">
+                              <span className="cursor-help border-b border-dotted border-gray-400">
+                                アラーム設定時刻の何秒前に鳴らす: {settings.globalOffsetSeconds}秒
+                              </span>
+                              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-0 pointer-events-none w-64 z-10">
+                                アラーム音を鳴らすタイミングを調整します。<br />
+                                設定時刻より少し早めに鳴らすことで、<br />
+                                正確な時刻に行動を開始できます。
+                                <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                              </div>
+                            </span>
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="60"
+                            value={settings.globalOffsetSeconds}
+                            onChange={(e) => updateGlobalSettings({ globalOffsetSeconds: parseInt(e.target.value) })}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={settings.globalAutoEnableAlarm}
+                              onChange={(e) => updateGlobalSettings({ globalAutoEnableAlarm: e.target.checked })}
+                              className="mr-2"
+                            />
+                            <span className="text-sm font-medium text-gray-700">
+                              アラーム追加時にアラームを自動でONにする
+                            </span>
+                          </label>
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        ボリューム: {settings.globalPreAlarmVolume}%
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={settings.globalPreAlarmVolume}
-                        onChange={(e) => updateGlobalSettings({ globalPreAlarmVolume: parseInt(e.target.value) })}
-                        className="w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        <span className="relative group">
-                          <span className="cursor-help border-b border-dotted border-gray-400">
-                            アラーム設定時刻の何分前に鳴らす: {settings.globalPreAlarmMinutes}分
-                          </span>
-                          <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-0 pointer-events-none w-72 z-10">
-                            先行アラームは事前準備のための機能です。<br />
-                            例: 21:30の指標なら21:20に先行アラームで<br />
-                            「もうすぐ指標です」と通知し、準備時間を確保。<br />
-                            21:30に本アラームで「指標が発表」を通知します。
-                            <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                          </div>
-                        </span>
-                      </label>
-                      <input
-                        type="range"
-                        min="1"
-                        max="30"
-                        value={settings.globalPreAlarmMinutes}
-                        onChange={(e) => updateGlobalSettings({ globalPreAlarmMinutes: parseInt(e.target.value) })}
-                        className="w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={settings.globalAutoEnablePreAlarm}
-                          onChange={(e) => updateGlobalSettings({ globalAutoEnablePreAlarm: e.target.checked })}
-                          className="mr-2"
-                        />
-                        <span className="text-sm font-medium text-gray-700">
-                          アラーム追加時に先行アラームを自動でONにする
-                        </span>
-                      </label>
-                    </div>
-                </div>
-              </div>
-
-              {/* アラーム設定 */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-700 mb-4">アラーム設定</h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      アラート音
-                    </label>
-                    <div className="flex gap-2">
-                      <select
-                        value={settings.globalAlarmSound}
-                        onChange={(e) => updateGlobalSettings({ globalAlarmSound: e.target.value })}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        {alarmSounds.map((sound) => (
-                          <option key={sound.value} value={sound.value}>
-                            {sound.label}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={async () => {
-                          if (currentAudio && currentAudioType === 'alarm') {
-                            stopCurrentAudio()
-                          } else {
-                            // メインプロセスの音声再生をテスト
-                            try {
-                              console.log('メインプロセスの音声再生をテスト:', settings.globalAlarmSound)
-                              await window.electronAPI.testAlarmSound(settings.globalAlarmSound)
-                            } catch (error) {
-                              console.error('メインプロセスの音声再生テストエラー:', error)
-                              // フォールバック：ブラウザの音声再生を試す
-                              playSound(settings.globalAlarmSound, settings.globalVolume, 'alarm')
-                            }
-                          }
-                        }}
-                        className={`px-3 py-2 ${currentAudio && currentAudioType === 'alarm' ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} text-white rounded-md transition-colors flex items-center gap-1`}
-                        title={currentAudio && currentAudioType === 'alarm' ? "音を停止" : "音を確認"}
-                      >
-                        {currentAudio && currentAudioType === 'alarm' ? (
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M6,6H18V18H6V6Z" />
-                          </svg>
-                        ) : (
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M8,5.14V19.14L19,12.14L8,5.14Z" />
-                          </svg>
-                        )}
-                        {currentAudio && currentAudioType === 'alarm' ? '停止' : '確認'}
-                      </button>
-                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      ボリューム: {settings.globalVolume}%
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={settings.globalVolume}
-                      onChange={(e) => updateGlobalSettings({ globalVolume: parseInt(e.target.value) })}
-                      className="w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <span className="relative group">
-                        <span className="cursor-help border-b border-dotted border-gray-400">
-                          アラーム設定時刻の何秒前に鳴らす: {settings.globalOffsetSeconds}秒
-                        </span>
-                        <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-0 pointer-events-none w-64 z-10">
-                          アラーム音を鳴らすタイミングを調整します。<br />
-                          設定時刻より少し早めに鳴らすことで、<br />
-                          正確な時刻に行動を開始できます。
-                          <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                        </div>
-                      </span>
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="60"
-                      value={settings.globalOffsetSeconds}
-                      onChange={(e) => updateGlobalSettings({ globalOffsetSeconds: parseInt(e.target.value) })}
-                      className="w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={settings.globalAutoEnableAlarm}
-                        onChange={(e) => updateGlobalSettings({ globalAutoEnableAlarm: e.target.checked })}
-                        className="mr-2"
-                      />
-                      <span className="text-sm font-medium text-gray-700">
-                        アラーム追加時にアラームを自動でONにする
-                      </span>
-                    </label>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
