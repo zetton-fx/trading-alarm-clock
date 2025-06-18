@@ -13,7 +13,6 @@ export interface AlarmSettings {
   globalPreAlarmSound: string
   globalVolume: number
   globalPreAlarmVolume: number
-  globalPreAlarmEnabled: boolean
   globalPreAlarmMinutes: number
   globalOffsetSeconds: number // アラーム時刻の何秒前に鳴らすか
   globalAutoEnableAlarm: boolean // アラーム追加時に自動でON
@@ -26,11 +25,10 @@ export const defaultAlarmSettings: AlarmSettings = {
   globalPreAlarmSound: 'alarm-electric-timer-beeping.mp3',
   globalVolume: 50,
   globalPreAlarmVolume: 30,
-  globalPreAlarmEnabled: false,
   globalPreAlarmMinutes: 5,
   globalOffsetSeconds: 0,
   globalAutoEnableAlarm: true,
-  globalAutoEnablePreAlarm: false
+  globalAutoEnablePreAlarm: true
 }
 
 export const alarmSounds = [

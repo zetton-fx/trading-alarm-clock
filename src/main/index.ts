@@ -536,7 +536,7 @@ const checkAlarms = async (): Promise<void> => {
         const alarmKey = `${alarm.id}_${alarm.hour}_${alarm.minute}`
       
       // 先行アラームのチェック
-      if (alarm.preAlarmEnabled && alarmSettings.globalPreAlarmEnabled) {
+      if (alarm.preAlarmEnabled) {
         const preAlarmTime = new Date()
         preAlarmTime.setHours(alarm.hour, alarm.minute - alarmSettings.globalPreAlarmMinutes, 0, 0)
         
@@ -572,10 +572,17 @@ const checkAlarms = async (): Promise<void> => {
         }
       }
       
-      // メインアラームのチェック
-      if (currentHour === alarm.hour && 
-          currentMinute === alarm.minute && 
-          currentSeconds < 10 && // 10秒以内
+      // メインアラームのチェック（オフセット対応）
+      const alarmTime = new Date()
+      alarmTime.setHours(alarm.hour, alarm.minute, 0, 0)
+      const offsetAlarmTime = new Date(alarmTime.getTime() - (alarmSettings.globalOffsetSeconds * 1000))
+      const offsetHour = offsetAlarmTime.getHours()
+      const offsetMinute = offsetAlarmTime.getMinutes()
+      const offsetSeconds = offsetAlarmTime.getSeconds()
+      
+      if (currentHour === offsetHour && 
+          currentMinute === offsetMinute && 
+          currentSeconds === offsetSeconds &&
           !activeAlarms.has(alarmKey) &&
           (!recentAlarms.has(alarmKey) || currentTime - recentAlarms.get(alarmKey)! > 60000)) {
         
