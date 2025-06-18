@@ -102,6 +102,38 @@ let alarmWindow: BrowserWindow | null = null
 let alarmCheckInterval: NodeJS.Timeout | null = null
 let activeAlarms: Set<string> = new Set() // 現在鳴っているアラーム
 let recentAlarms: Map<string, number> = new Map() // 最近鳴ったアラーム（重複防止）
+let cachedAlarmSettings: AlarmSettings | null = null // キャッシュされたアラーム設定
+let cachedSettings: AppSettings | null = null // キャッシュされたメイン設定
+
+// アラーム設定をキャッシュから取得または読み込み
+const getAlarmSettings = async (): Promise<AlarmSettings> => {
+  if (!cachedAlarmSettings) {
+    cachedAlarmSettings = await loadAlarmSettings()
+    console.log('アラーム設定をキャッシュに読み込みました')
+  }
+  return cachedAlarmSettings
+}
+
+// アラーム設定キャッシュをクリア（設定変更時に呼び出す）
+const clearAlarmSettingsCache = (): void => {
+  cachedAlarmSettings = null
+  console.log('アラーム設定キャッシュをクリアしました')
+}
+
+// メイン設定をキャッシュから取得または読み込み
+const getSettings = async (): Promise<AppSettings> => {
+  if (!cachedSettings) {
+    cachedSettings = await loadSettings()
+    console.log('メイン設定をキャッシュに読み込みました')
+  }
+  return cachedSettings
+}
+
+// メイン設定キャッシュをクリア（設定変更時に呼び出す）
+const clearSettingsCache = (): void => {
+  cachedSettings = null
+  console.log('メイン設定キャッシュをクリアしました')
+}
 
 // アラームチェック停止（先に宣言）
 const stopAlarmCheck = (): void => {
@@ -197,7 +229,7 @@ const applyWindowsTitleBarHiding = (window: BrowserWindow, delay: number = 0): v
 
 async function createWindow(): Promise<void> {
   // 設定を読み込み
-  const settings = await loadSettings()
+  const settings = await getSettings()
   const { windowWidth, windowHeight } = sizeMapping[settings.size]
 
   // メインウィンドウを作成
@@ -310,11 +342,12 @@ async function createWindow(): Promise<void> {
 
   // 設定の保存・読み込み
   ipcMain.handle('load-settings', async (): Promise<AppSettings> => {
-    return await loadSettings()
+    return await getSettings()
   })
 
   ipcMain.handle('save-settings', async (_, settings: AppSettings): Promise<void> => {
     await saveSettings(settings)
+    clearSettingsCache() // 設定変更時にキャッシュをクリア
     
     // 現在のサイズを取得
     const currentSize = mainWindow.getSize()
@@ -386,11 +419,12 @@ async function createWindow(): Promise<void> {
 
   // アラーム設定の保存・読み込み
   ipcMain.handle('load-alarm-settings', async (): Promise<AlarmSettings> => {
-    return await loadAlarmSettings()
+    return await getAlarmSettings()
   })
 
   ipcMain.handle('save-alarm-settings', async (_, settings: AlarmSettings): Promise<void> => {
     await saveAlarmSettings(settings)
+    clearAlarmSettingsCache() // 設定変更時にキャッシュをクリア
   })
 
   // アセットファイルのパスを取得
@@ -522,7 +556,7 @@ const checkAlarms = async (): Promise<void> => {
       return
     }
 
-    const alarmSettings = await loadAlarmSettings()
+    const alarmSettings = await getAlarmSettings()
     const now = new Date()
     const currentHour = now.getHours()
     const currentMinute = now.getMinutes()
@@ -624,10 +658,13 @@ const checkAlarms = async (): Promise<void> => {
 }
 
 // アラームチェック開始
-const startAlarmCheck = (): void => {
+const startAlarmCheck = async (): Promise<void> => {
   if (alarmCheckInterval) {
     clearInterval(alarmCheckInterval)
   }
+  
+  // 初回読み込み
+  await getAlarmSettings()
   
   // 1秒ごとにアラームをチェック
   alarmCheckInterval = setInterval(checkAlarms, 1000)
@@ -644,7 +681,7 @@ app.whenReady().then(async () => {
   await createWindow()
   
   // アラームチェック開始
-  startAlarmCheck()
+  await startAlarmCheck()
 
   app.on('activate', async function () {
     // macOSでは、通常、アプリケーションのアイコンがクリックされたときにウィンドウが開いていない場合、
