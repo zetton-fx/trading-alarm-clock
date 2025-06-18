@@ -32,8 +32,8 @@ export const defaultAlarmSettings: AlarmSettings = {
 }
 
 export const alarmSounds = [
-  { value: 'alarm-upbeat-piano-and-trumpet.mp3', label: 'ピアノとトランペット' },
   { value: 'alarm-electric-timer-beeping.mp3', label: 'エレクトリックタイマー' },
+  { value: 'alarm-upbeat-piano-and-trumpet.mp3', label: 'ピアノとトランペット' },
   { value: 'alarm-uplifting-background-music.mp3', label: 'アップリフティング' },
   { value: 'alarm-positive-boost.mp3', label: 'ポジティブブースト' },
   { value: 'alarm-joyful-upbeat-energy.mp3', label: 'ジョイフルエナジー' }
