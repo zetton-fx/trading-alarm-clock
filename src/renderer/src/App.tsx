@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useSettingsStore } from './store/settingsStore'
+import { useAlarmStore } from './store/alarmStore'
 import SettingsWindow from './components/SettingsWindow'
 import AlarmWindow from './components/AlarmWindow'
 import { sizeMapping } from '../../shared/types/settings'
@@ -33,6 +34,7 @@ function App() {
   const [alarmTimeoutId, setAlarmTimeoutId] = useState<NodeJS.Timeout | null>(null)
   
   const { settings, openSettings, loadSettings, isSettingsOpen } = useSettingsStore()
+  const { settings: alarmSettings, loadAlarmSettings } = useAlarmStore()
 
   // 音声管理
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null)
@@ -55,7 +57,7 @@ function App() {
   }, [])
 
   // 確実に音声を再生する関数（Electron autoplay policy対応）
-  const playAlarmAudio = async (soundFile: string) => {
+  const playAlarmAudio = async (soundFile: string, volume: number = 80) => {
     try {
       console.log('音声再生開始:', soundFile)
       
@@ -77,7 +79,7 @@ function App() {
         try {
           console.log('音声ソース試行:', src)
           const audio = new Audio(src)
-          audio.volume = 0.8
+          audio.volume = volume / 100
           audio.preload = 'auto'
           audio.loop = true // ループ再生でアラームらしく
           
@@ -102,7 +104,7 @@ function App() {
       // 全ての試行が失敗した場合の最後の手段
       console.log('全ての音声ソース試行が失敗、最後の手段を実行')
       const fallbackAudio = new Audio()
-      fallbackAudio.volume = 0.8
+      fallbackAudio.volume = volume / 100
       fallbackAudio.loop = true
       fallbackAudio.src = `/sounds/${soundFile}`
       
@@ -164,6 +166,7 @@ function App() {
   // 初期設定の読み込み
   useEffect(() => {
     loadSettings()
+    loadAlarmSettings()
     
     // 設定変更の監視
     window.electronAPI?.onSettingsUpdated((updatedSettings: any) => {
@@ -189,7 +192,7 @@ function App() {
       })
       
       // アラーム音を再生（レンダラープロセス側）
-      playAlarmAudio('alarm-upbeat-piano-and-trumpet.mp3')
+      playAlarmAudio(alarmSettings.globalAlarmSound, alarmSettings.globalVolume)
       
       // 30秒後に通知を自動で消す（音声も停止）
       const timeoutId = setTimeout(() => {
@@ -217,7 +220,7 @@ function App() {
       })
       
       // 先行アラーム音を再生（レンダラープロセス側）
-      playAlarmAudio('alarm-electric-timer-beeping.mp3')
+      playAlarmAudio(alarmSettings.globalPreAlarmSound, alarmSettings.globalPreAlarmVolume)
       
       // 15秒後に通知を自動で消す（音声も停止）
       const timeoutId = setTimeout(() => {
@@ -237,7 +240,7 @@ function App() {
       window.electronAPI?.removeSettingsUpdatedListener()
       // アラームリスナーのクリーンアップ（必要に応じて）
     }
-  }, [loadSettings])
+  }, [loadSettings, loadAlarmSettings])
 
   // 時計の更新
   useEffect(() => {
