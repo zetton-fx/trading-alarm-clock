@@ -272,12 +272,18 @@ function App() {
     
     // アラーム通知の監視
     const handleAlarmTriggered = (alarmData: any) => {
-      console.log('アラーム発動:', alarmData)
-      console.log('現在のアラーム設定:', alarmSettings)
+      console.log('メインアラーム発動:', alarmData)
+      
+      // 既存のアラームがある場合は停止
+      if (alarmNotification) {
+        console.log('🔄 既存のアラームを停止して新しいメインアラームに切り替えます')
+        stopAlarmAudio()
+      }
       
       // 既存のタイマーをクリア
       if (alarmTimeoutId) {
         clearTimeout(alarmTimeoutId)
+        setAlarmTimeoutId(null)
       }
       
       setAlarmNotification({
@@ -312,11 +318,17 @@ function App() {
 
     const handlePreAlarmTriggered = (alarmData: any) => {
       console.log('先行アラーム発動:', alarmData)
-      console.log('現在のアラーム設定:', alarmSettings)
+      
+      // 既存のアラームがある場合は停止
+      if (alarmNotification) {
+        console.log('🔄 既存のアラームを停止して新しい先行アラームに切り替えます')
+        stopAlarmAudio()
+      }
       
       // 既存のタイマーをクリア
       if (alarmTimeoutId) {
         clearTimeout(alarmTimeoutId)
+        setAlarmTimeoutId(null)
       }
       
       setAlarmNotification({
