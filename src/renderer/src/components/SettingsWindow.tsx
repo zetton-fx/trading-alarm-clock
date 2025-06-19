@@ -109,7 +109,7 @@ const SettingsWindow: React.FC = () => {
                 value={settings.size}
                 onChange={(e) => setSettings(prev => ({ 
                   ...prev, 
-                  size: Number(e.target.value) as 1 | 2 | 3 | 4 | 5 
+                  size: Number(e.target.value) as 1 | 2 | 3 | 4 | 5 | 6 
                 }))}
                 style={{
                   width: '100%',
@@ -124,6 +124,7 @@ const SettingsWindow: React.FC = () => {
                 <option value={3}>中 (450x250)</option>
                 <option value={4}>大 (500x275)</option>
                 <option value={5}>最大 (550x300)</option>
+                <option value={6}>デバッグ用 (2048x1024)</option>
               </select>
             </div>
 

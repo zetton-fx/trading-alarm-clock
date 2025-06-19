@@ -34,7 +34,7 @@ function App() {
   const [alarmTimeoutId, setAlarmTimeoutId] = useState<NodeJS.Timeout | null>(null)
   
   const { settings, openSettings, loadSettings, isSettingsOpen } = useSettingsStore()
-  const { settings: alarmSettings, loadAlarmSettings } = useAlarmStore()
+  const { settings: alarmSettings, loadAlarmSettings, setSettings: setAlarmSettings } = useAlarmStore()
 
   // 音声管理
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null)
@@ -177,12 +177,13 @@ function App() {
     // アラーム設定変更の監視
     window.electronAPI?.onAlarmSettingsUpdated((updatedAlarmSettings: any) => {
       console.log('アラーム設定が更新されました:', updatedAlarmSettings)
-      useAlarmStore.getState().settings = updatedAlarmSettings
+      setAlarmSettings(updatedAlarmSettings)
     })
     
     // アラーム通知の監視
     const handleAlarmTriggered = (alarmData: any) => {
       console.log('アラーム発動:', alarmData)
+      console.log('現在のアラーム設定:', alarmSettings)
       
       // 既存のタイマーをクリア
       if (alarmTimeoutId) {
@@ -197,8 +198,13 @@ function App() {
         timestamp: Date.now()
       })
       
-      // アラーム音を再生（レンダラープロセス側）
-      playAlarmAudio(alarmSettings.globalAlarmSound, alarmSettings.globalVolume)
+      // 最新のアラーム設定を取得してから音声を再生
+      const currentAlarmSettings = useAlarmStore.getState().settings
+      console.log('音声再生に使用する設定:', {
+        sound: currentAlarmSettings.globalAlarmSound,
+        volume: currentAlarmSettings.globalVolume
+      })
+      playAlarmAudio(currentAlarmSettings.globalAlarmSound, currentAlarmSettings.globalVolume)
       
       // 30秒後に通知を自動で消す（音声も停止）
       const timeoutId = setTimeout(() => {
@@ -211,6 +217,7 @@ function App() {
 
     const handlePreAlarmTriggered = (alarmData: any) => {
       console.log('先行アラーム発動:', alarmData)
+      console.log('現在のアラーム設定:', alarmSettings)
       
       // 既存のタイマーをクリア
       if (alarmTimeoutId) {
@@ -225,8 +232,13 @@ function App() {
         timestamp: Date.now()
       })
       
-      // 先行アラーム音を再生（レンダラープロセス側）
-      playAlarmAudio(alarmSettings.globalPreAlarmSound, alarmSettings.globalPreAlarmVolume)
+      // 最新のアラーム設定を取得してから音声を再生
+      const currentAlarmSettings = useAlarmStore.getState().settings
+      console.log('先行アラーム音声再生に使用する設定:', {
+        sound: currentAlarmSettings.globalPreAlarmSound,
+        volume: currentAlarmSettings.globalPreAlarmVolume
+      })
+      playAlarmAudio(currentAlarmSettings.globalPreAlarmSound, currentAlarmSettings.globalPreAlarmVolume)
       
       // 15秒後に通知を自動で消す（音声も停止）
       const timeoutId = setTimeout(() => {
@@ -247,7 +259,7 @@ function App() {
       window.electronAPI?.removeAlarmSettingsUpdatedListener()
       // アラームリスナーのクリーンアップ（必要に応じて）
     }
-  }, [loadSettings, loadAlarmSettings])
+  }, [loadSettings, loadAlarmSettings, setAlarmSettings])
 
   // 時計の更新
   useEffect(() => {

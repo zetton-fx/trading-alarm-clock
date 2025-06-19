@@ -6,6 +6,7 @@ interface AlarmStore {
   isAlarmWindowOpen: boolean
   loadAlarmSettings: () => Promise<void>
   saveAlarmSettings: () => Promise<void>
+  setSettings: (settings: AlarmSettings) => void
   addAlarm: (alarm: Omit<AlarmItem, 'id'>) => void
   updateAlarm: (id: string, updates: Partial<AlarmItem>) => void
   deleteAlarm: (id: string) => void
@@ -36,6 +37,10 @@ export const useAlarmStore = create<AlarmStore>((set, get) => ({
     } catch (error) {
       console.error('アラーム設定の保存に失敗しました:', error)
     }
+  },
+
+  setSettings: (settings) => {
+    set({ settings })
   },
 
   addAlarm: (alarm) => {

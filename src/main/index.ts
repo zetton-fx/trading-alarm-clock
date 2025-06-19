@@ -102,37 +102,59 @@ let alarmWindow: BrowserWindow | null = null
 let alarmCheckInterval: NodeJS.Timeout | null = null
 let activeAlarms: Set<string> = new Set() // 現在鳴っているアラーム
 let recentAlarms: Map<string, number> = new Map() // 最近鳴ったアラーム（重複防止）
-let cachedAlarmSettings: AlarmSettings | null = null // キャッシュされたアラーム設定
-let cachedSettings: AppSettings | null = null // キャッシュされたメイン設定
+let cachedAlarmSettings: AlarmSettings | null = null // メモリにロードされたアラーム設定
+let cachedSettings: AppSettings | null = null // メモリにロードされたメイン設定
 
-// アラーム設定をキャッシュから取得または読み込み
-const getAlarmSettings = async (): Promise<AlarmSettings> => {
+// アラーム設定をメモリから取得（必ずメモリにロードされている前提）
+const getAlarmSettings = (): AlarmSettings => {
   if (!cachedAlarmSettings) {
-    cachedAlarmSettings = await loadAlarmSettings()
-    console.log('アラーム設定をキャッシュに読み込みました')
+    throw new Error('アラーム設定がメモリにロードされていません。アプリケーションの初期化エラーです。')
   }
   return cachedAlarmSettings
 }
 
-// アラーム設定キャッシュをクリア（設定変更時に呼び出す）
-const clearAlarmSettingsCache = (): void => {
-  cachedAlarmSettings = null
-  console.log('アラーム設定キャッシュをクリアしました')
+// アラーム設定をメモリに強制ロード
+const loadAlarmSettingsToMemory = async (): Promise<void> => {
+  try {
+    cachedAlarmSettings = await loadAlarmSettings()
+    console.log('アラーム設定をメモリにロードしました:', cachedAlarmSettings)
+  } catch (error) {
+    console.error('アラーム設定のメモリロードに失敗:', error)
+    cachedAlarmSettings = defaultAlarmSettings
+    console.log('デフォルトアラーム設定をメモリにロードしました')
+  }
 }
 
-// メイン設定をキャッシュから取得または読み込み
-const getSettings = async (): Promise<AppSettings> => {
+// アラーム設定をメモリに再ロード（設定変更時に呼び出す）
+const reloadAlarmSettingsToMemory = async (): Promise<void> => {
+  await loadAlarmSettingsToMemory()
+  console.log('アラーム設定をメモリに再ロードしました')
+}
+
+// メイン設定をメモリから取得（必ずメモリにロードされている前提）
+const getSettings = (): AppSettings => {
   if (!cachedSettings) {
-    cachedSettings = await loadSettings()
-    console.log('メイン設定をキャッシュに読み込みました')
+    throw new Error('メイン設定がメモリにロードされていません。アプリケーションの初期化エラーです。')
   }
   return cachedSettings
 }
 
-// メイン設定キャッシュをクリア（設定変更時に呼び出す）
-const clearSettingsCache = (): void => {
-  cachedSettings = null
-  console.log('メイン設定キャッシュをクリアしました')
+// メイン設定をメモリに強制ロード
+const loadSettingsToMemory = async (): Promise<void> => {
+  try {
+    cachedSettings = await loadSettings()
+    console.log('メイン設定をメモリにロードしました:', cachedSettings)
+  } catch (error) {
+    console.error('メイン設定のメモリロードに失敗:', error)
+    cachedSettings = defaultSettings
+    console.log('デフォルトメイン設定をメモリにロードしました')
+  }
+}
+
+// メイン設定をメモリに再ロード（設定変更時に呼び出す）
+const reloadSettingsToMemory = async (): Promise<void> => {
+  await loadSettingsToMemory()
+  console.log('メイン設定をメモリに再ロードしました')
 }
 
 // アラームチェック停止（先に宣言）
@@ -228,8 +250,8 @@ const applyWindowsTitleBarHiding = (window: BrowserWindow, delay: number = 0): v
 }
 
 async function createWindow(): Promise<void> {
-  // 設定を読み込み
-  const settings = await getSettings()
+  // メモリにロードされた設定を取得
+  const settings = getSettings()
   const { windowWidth, windowHeight } = sizeMapping[settings.size]
 
   // メインウィンドウを作成
@@ -342,12 +364,12 @@ async function createWindow(): Promise<void> {
 
   // 設定の保存・読み込み
   ipcMain.handle('load-settings', async (): Promise<AppSettings> => {
-    return await getSettings()
+    return getSettings()
   })
 
   ipcMain.handle('save-settings', async (_, settings: AppSettings): Promise<void> => {
     await saveSettings(settings)
-    clearSettingsCache() // 設定変更時にキャッシュをクリア
+    await reloadSettingsToMemory() // 設定変更時にメモリに再ロード
     
     // 現在のサイズを取得
     const currentSize = mainWindow.getSize()
@@ -419,12 +441,12 @@ async function createWindow(): Promise<void> {
 
   // アラーム設定の保存・読み込み
   ipcMain.handle('load-alarm-settings', async (): Promise<AlarmSettings> => {
-    return await getAlarmSettings()
+    return getAlarmSettings()
   })
 
   ipcMain.handle('save-alarm-settings', async (_, settings: AlarmSettings): Promise<void> => {
     await saveAlarmSettings(settings)
-    clearAlarmSettingsCache() // 設定変更時にキャッシュをクリア
+    await reloadAlarmSettingsToMemory() // 設定変更時にメモリに再ロード
     
     // 全てのウィンドウにアラーム設定更新を通知
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -564,8 +586,8 @@ const checkAlarms = async (): Promise<void> => {
       return
     }
 
-    // アラーム発動時は常に最新の設定を読み込む（キャッシュを使わない）
-    const alarmSettings = await loadAlarmSettings()
+    // メモリにロードされたアラーム設定を使用
+    const alarmSettings = getAlarmSettings()
     const now = new Date()
     const currentHour = now.getHours()
     const currentMinute = now.getMinutes()
@@ -667,15 +689,12 @@ const checkAlarms = async (): Promise<void> => {
 }
 
 // アラームチェック開始
-const startAlarmCheck = async (): Promise<void> => {
+const startAlarmCheck = (): void => {
   if (alarmCheckInterval) {
     clearInterval(alarmCheckInterval)
   }
   
-  // 初回読み込み
-  await getAlarmSettings()
-  
-  // 1秒ごとにアラームをチェック
+  // 1秒ごとにアラームをチェック（設定はメモリから取得）
   alarmCheckInterval = setInterval(checkAlarms, 1000)
   console.log('アラームチェック開始')
 }
@@ -687,10 +706,14 @@ app.whenReady().then(async () => {
   console.log('Electron アプリケーション起動中...')
   console.log('設定ディレクトリ:', app.getPath('userData'))
   
+  // 起動時に全ての設定をメモリにロード
+  await loadSettingsToMemory()
+  await loadAlarmSettingsToMemory()
+  
   await createWindow()
   
   // アラームチェック開始
-  await startAlarmCheck()
+  startAlarmCheck()
 
   app.on('activate', async function () {
     // macOSでは、通常、アプリケーションのアイコンがクリックされたときにウィンドウが開いていない場合、
