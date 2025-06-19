@@ -365,6 +365,8 @@ function App() {
     
     // アラーム通知の監視
     const handleAlarmTriggered = (alarmData: any) => {
+      // 新しいアラーム再生前に必ず既存の音声を停止
+      stopAlarmAudio()
       console.log('メインアラーム発動:', alarmData)
       
       // 既存のアラームがある場合は停止
@@ -412,6 +414,8 @@ function App() {
     }
 
     const handlePreAlarmTriggered = (alarmData: any) => {
+      // 新しいアラーム再生前に必ず既存の音声を停止
+      stopAlarmAudio()
       console.log('先行アラーム発動:', alarmData)
       
       // 既存のアラームがある場合は停止
