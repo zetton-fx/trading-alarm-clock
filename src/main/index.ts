@@ -457,6 +457,15 @@ async function createWindow(): Promise<void> {
     }
   })
 
+  // デバッグ用：メモリ上の設定を取得
+  ipcMain.handle('debug-get-memory-settings', (): AppSettings | null => {
+    return cachedSettings
+  })
+
+  ipcMain.handle('debug-get-memory-alarm-settings', (): AlarmSettings | null => {
+    return cachedAlarmSettings
+  })
+
   // アセットファイルのパスを取得
   ipcMain.handle('get-asset-path', (_, assetPath: string): string => {
     const path = require('path')

@@ -160,13 +160,75 @@ function App() {
       console.log('音声停止')
     }
   }
-  
-  console.log('App レンダリング - isSettingsOpen:', isSettingsOpen)
 
   // 初期設定の読み込み
   useEffect(() => {
     loadSettings()
     loadAlarmSettings()
+    
+    // デバッグ用のグローバル関数を追加
+    if (typeof window !== 'undefined') {
+      (window as any).debugShowSettings = async () => {
+        const memorySettings = await window.electronAPI?.debugGetMemorySettings()
+        const memoryAlarmSettings = await window.electronAPI?.debugGetMemoryAlarmSettings()
+        console.group('🔧 メモリ上の設定情報')
+        console.log('📱 アプリ設定 (メインプロセス):', memorySettings)
+        console.log('⏰ アラーム設定 (メインプロセス):', memoryAlarmSettings)
+        console.log('📱 アプリ設定 (レンダラープロセス):', settings)
+        console.log('⏰ アラーム設定 (レンダラープロセス):', alarmSettings)
+        console.groupEnd()
+        return {
+          mainProcess: {
+            appSettings: memorySettings,
+            alarmSettings: memoryAlarmSettings
+          },
+          rendererProcess: {
+            appSettings: settings,
+            alarmSettings: alarmSettings
+          }
+        }
+      }
+      
+      (window as any).debugShowAlarmSettings = async () => {
+        const memoryAlarmSettings = await window.electronAPI?.debugGetMemoryAlarmSettings()
+        console.group('⏰ アラーム設定詳細')
+        console.log('メインプロセス (実際にアラーム発動で使用):', memoryAlarmSettings)
+        console.log('レンダラープロセス (UI表示用):', alarmSettings)
+        console.log('🔊 グローバルアラーム音:', memoryAlarmSettings?.globalAlarmSound)
+        console.log('🔊 グローバル先行アラーム音:', memoryAlarmSettings?.globalPreAlarmSound)
+        console.log('🔉 グローバルボリューム:', memoryAlarmSettings?.globalVolume + '%')
+        console.log('🔉 グローバル先行アラームボリューム:', memoryAlarmSettings?.globalPreAlarmVolume + '%')
+        console.log('📝 登録済みアラーム数:', memoryAlarmSettings?.alarms?.length || 0)
+        console.groupEnd()
+        return memoryAlarmSettings
+      }
+      
+      (window as any).debugShowAppSettings = async () => {
+        const memorySettings = await window.electronAPI?.debugGetMemorySettings()
+        console.group('📱 アプリ設定詳細')
+        console.log('メインプロセス:', memorySettings)
+        console.log('レンダラープロセス:', settings)
+        console.log('📏 サイズ:', memorySettings?.size)
+        console.log('📌 常に前面表示:', memorySettings?.alwaysOnTop)
+        console.log('🎨 フォント:', memorySettings?.font)
+        console.log('🎨 文字色:', memorySettings?.textColor)
+        console.log('🎨 背景色:', memorySettings?.backgroundColor)
+        console.groupEnd()
+        return memorySettings
+      }
+      
+      // ヘルプ関数
+      (window as any).debugHelp = () => {
+        console.group('🛠️ デバッグ関数ヘルプ')
+        console.log('📋 debugShowSettings() - 全設定を表示')
+        console.log('⏰ debugShowAlarmSettings() - アラーム設定のみ表示')
+        console.log('📱 debugShowAppSettings() - アプリ設定のみ表示')
+        console.log('❓ debugHelp() - このヘルプを表示')
+        console.groupEnd()
+      }
+      
+      console.log('🛠️ デバッグ関数が利用可能です。debugHelp() でヘルプを表示できます。')
+    }
     
     // 設定変更の監視
     window.electronAPI?.onSettingsUpdated((updatedSettings: any) => {

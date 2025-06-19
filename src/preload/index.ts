@@ -45,5 +45,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // アセットファイル関連
   getAssetPath: (assetPath: string): Promise<string> => ipcRenderer.invoke('get-asset-path', assetPath),
   
+  // デバッグ用関数
+  debugGetMemorySettings: (): Promise<any> => ipcRenderer.invoke('debug-get-memory-settings'),
+  debugGetMemoryAlarmSettings: (): Promise<any> => ipcRenderer.invoke('debug-get-memory-alarm-settings'),
 
 }) 

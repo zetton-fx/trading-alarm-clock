@@ -77,3 +77,80 @@ ERROR:ui/gl/gl_surface_presentation_helper.cc
 - GPU加速に関する警告
 - ソフトウェアレンダリングで代替されるため問題なし
 
+## デバッグ機能
+
+アプリケーションには開発者向けのデバッグ機能が組み込まれています。
+
+### Developer Toolsの開き方
+
+1. アプリケーションを起動
+2. `Ctrl+Shift+I` (Linux/Windows) または `Cmd+Option+I` (Mac) でDeveloper Toolsを開く
+3. Consoleタブを選択
+
+### デバッグ関数
+
+Developer ToolsのConsoleから以下の関数を実行できます：
+
+#### **`debugShowSettings()`**
+全設定を一覧表示します。メインプロセス（実際に使用される設定）とレンダラープロセス（UI表示用の設定）の両方を確認できます。
+
+```javascript
+debugShowSettings()
+```
+
+#### **`debugShowAlarmSettings()`**
+アラーム設定のみを詳細表示します。
+
+```javascript
+debugShowAlarmSettings()
+```
+
+**表示内容：**
+- グローバルアラーム音ファイル名
+- グローバル先行アラーム音ファイル名
+- ボリューム設定（%表示）
+- 登録済みアラーム数
+
+#### 📱 **`debugShowAppSettings()`**
+アプリ設定のみを詳細表示します。
+
+```javascript
+debugShowAppSettings()
+```
+
+**表示内容：**
+- サイズ設定
+- 常に前面表示フラグ
+- フォント設定
+- 色設定（文字色・背景色）
+
+#### ❓ **`debugHelp()`**
+利用可能なデバッグ関数の一覧を表示します。
+
+```javascript
+debugHelp()
+```
+
+### デバッグのユースケース
+
+1. **アラーム音が変わらない場合**
+   ```javascript
+   debugShowAlarmSettings()
+   ```
+   メインプロセスとレンダラープロセスの設定が同期されているか確認
+
+2. **設定変更が反映されない場合**
+   ```javascript
+   debugShowSettings()
+   ```
+   実際に使用されている設定値を確認
+
+3. **メモリ上の設定確認**
+   各設定がメモリに正しくロードされているかを確認
+
+### 注意事項
+
+- デバッグ関数はアプリ起動時に自動で登録されます
+- 本番環境でも利用可能ですが、開発・デバッグ目的での使用を推奨します
+- 設定変更後は該当するデバッグ関数で変更が反映されているか確認できます
+
