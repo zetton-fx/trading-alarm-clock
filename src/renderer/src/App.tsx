@@ -161,6 +161,32 @@ function App() {
     }
   }
 
+  // アラーム通知が消える時に音声を確実に停止
+  useEffect(() => {
+    if (!alarmNotification && currentAudio) {
+      console.log('アラーム通知が消えたため音声を停止します')
+      stopAlarmAudio()
+    }
+  }, [alarmNotification, currentAudio])
+
+  // ESCキーでアラーム通知を消す
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && alarmNotification) {
+        console.log('ESCキーでアラーム通知を消します')
+        if (alarmTimeoutId) {
+          clearTimeout(alarmTimeoutId)
+          setAlarmTimeoutId(null)
+        }
+        stopAlarmAudio()
+        setAlarmNotification(null)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [alarmNotification, alarmTimeoutId])
+
   // 初期設定の読み込み
   useEffect(() => {
     loadSettings()
@@ -194,11 +220,13 @@ function App() {
         console.group('⏰ アラーム設定詳細')
         console.log('メインプロセス (実際にアラーム発動で使用):', memoryAlarmSettings)
         console.log('レンダラープロセス (UI表示用):', alarmSettings)
-        console.log('🔊 グローバルアラーム音:', memoryAlarmSettings?.globalAlarmSound)
-        console.log('🔊 グローバル先行アラーム音:', memoryAlarmSettings?.globalPreAlarmSound)
-        console.log('🔉 グローバルボリューム:', memoryAlarmSettings?.globalVolume + '%')
-        console.log('🔉 グローバル先行アラームボリューム:', memoryAlarmSettings?.globalPreAlarmVolume + '%')
-        console.log('📝 登録済みアラーム数:', memoryAlarmSettings?.alarms?.length || 0)
+            console.log('🔊 グローバルアラーム音:', memoryAlarmSettings?.globalAlarmSound)
+    console.log('🔊 グローバル先行アラーム音:', memoryAlarmSettings?.globalPreAlarmSound)
+    console.log('🔉 グローバルボリューム:', memoryAlarmSettings?.globalVolume + '%')
+    console.log('🔉 グローバル先行アラームボリューム:', memoryAlarmSettings?.globalPreAlarmVolume + '%')
+    console.log('⏰ メインアラーム自動停止:', memoryAlarmSettings?.globalAlarmAutoStop ? 'ON (30秒後)' : 'OFF')
+    console.log('⏰ 先行アラーム自動停止:', memoryAlarmSettings?.globalPreAlarmAutoStop ? 'ON (15秒後)' : 'OFF')
+    console.log('📝 登録済みアラーム数:', memoryAlarmSettings?.alarms?.length || 0)
         console.groupEnd()
         return memoryAlarmSettings
       }
@@ -268,13 +296,18 @@ function App() {
       })
       playAlarmAudio(currentAlarmSettings.globalAlarmSound, currentAlarmSettings.globalVolume)
       
-      // 30秒後に通知を自動で消す（音声も停止）
-      const timeoutId = setTimeout(() => {
-        stopAlarmAudio()
-        setAlarmNotification(null)
-        setAlarmTimeoutId(null)
-      }, 30000)
-      setAlarmTimeoutId(timeoutId)
+      // 自動停止設定に基づいて30秒後に通知を自動で消す（音声も停止）
+      if (currentAlarmSettings.globalAlarmAutoStop) {
+        const timeoutId = setTimeout(() => {
+          console.log('メインアラーム自動停止: 30秒経過')
+          stopAlarmAudio()
+          setAlarmNotification(null)
+          setAlarmTimeoutId(null)
+        }, 30000)
+        setAlarmTimeoutId(timeoutId)
+      } else {
+        console.log('メインアラーム自動停止: OFF - 手動停止まで継続')
+      }
     }
 
     const handlePreAlarmTriggered = (alarmData: any) => {
@@ -302,13 +335,18 @@ function App() {
       })
       playAlarmAudio(currentAlarmSettings.globalPreAlarmSound, currentAlarmSettings.globalPreAlarmVolume)
       
-      // 15秒後に通知を自動で消す（音声も停止）
-      const timeoutId = setTimeout(() => {
-        stopAlarmAudio()
-        setAlarmNotification(null)
-        setAlarmTimeoutId(null)
-      }, 15000)
-      setAlarmTimeoutId(timeoutId)
+      // 自動停止設定に基づいて15秒後に通知を自動で消す（音声も停止）
+      if (currentAlarmSettings.globalPreAlarmAutoStop) {
+        const timeoutId = setTimeout(() => {
+          console.log('先行アラーム自動停止: 15秒経過')
+          stopAlarmAudio()
+          setAlarmNotification(null)
+          setAlarmTimeoutId(null)
+        }, 15000)
+        setAlarmTimeoutId(timeoutId)
+      } else {
+        console.log('先行アラーム自動停止: OFF - 手動停止まで継続')
+      }
     }
 
     // IPCイベントリスナーを登録
@@ -317,6 +355,12 @@ function App() {
     
     // クリーンアップ
     return () => {
+      // 音声を停止
+      stopAlarmAudio()
+      // タイマーをクリア
+      if (alarmTimeoutId) {
+        clearTimeout(alarmTimeoutId)
+      }
       window.electronAPI?.removeSettingsUpdatedListener()
       window.electronAPI?.removeAlarmSettingsUpdatedListener()
       // アラームリスナーのクリーンアップ（必要に応じて）

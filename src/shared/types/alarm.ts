@@ -17,6 +17,8 @@ export interface AlarmSettings {
   globalOffsetSeconds: number // アラーム時刻の何秒前に鳴らすか
   globalAutoEnableAlarm: boolean // アラーム追加時に自動でON
   globalAutoEnablePreAlarm: boolean // 先行アラーム追加時に自動でON
+  globalAlarmAutoStop: boolean // メインアラームの自動停止（30秒後）
+  globalPreAlarmAutoStop: boolean // 先行アラームの自動停止（15秒後）
 }
 
 export const defaultAlarmSettings: AlarmSettings = {
@@ -28,7 +30,9 @@ export const defaultAlarmSettings: AlarmSettings = {
   globalPreAlarmMinutes: 5,
   globalOffsetSeconds: 0,
   globalAutoEnableAlarm: true,
-  globalAutoEnablePreAlarm: true
+  globalAutoEnablePreAlarm: true,
+  globalAlarmAutoStop: true, // デフォルトは自動停止ON
+  globalPreAlarmAutoStop: true // デフォルトは自動停止ON
 }
 
 export const alarmSounds = [

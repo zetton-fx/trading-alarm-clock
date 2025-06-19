@@ -608,6 +608,19 @@ function AlarmWindow() {
                             </span>
                           </label>
                         </div>
+                        <div>
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={settings.globalPreAlarmAutoStop}
+                              onChange={(e) => updateGlobalSettings({ globalPreAlarmAutoStop: e.target.checked })}
+                              className="mr-2"
+                            />
+                            <span className="text-sm font-medium text-gray-700">
+                              先行アラームを15秒後に自動で停止する
+                            </span>
+                          </label>
+                        </div>
                       </div>
 
                       {/* メインアラーム設定 */}
@@ -699,6 +712,19 @@ function AlarmWindow() {
                             />
                             <span className="text-sm font-medium text-gray-700">
                               アラーム追加時にアラームを自動でONにする
+                            </span>
+                          </label>
+                        </div>
+                        <div>
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={settings.globalAlarmAutoStop}
+                              onChange={(e) => updateGlobalSettings({ globalAlarmAutoStop: e.target.checked })}
+                              className="mr-2"
+                            />
+                            <span className="text-sm font-medium text-gray-700">
+                              メインアラームを30秒後に自動で停止する
                             </span>
                           </label>
                         </div>
