@@ -174,6 +174,12 @@ function App() {
       useSettingsStore.getState().setSettings(updatedSettings)
     })
     
+    // アラーム設定変更の監視
+    window.electronAPI?.onAlarmSettingsUpdated((updatedAlarmSettings: any) => {
+      console.log('アラーム設定が更新されました:', updatedAlarmSettings)
+      useAlarmStore.getState().settings = updatedAlarmSettings
+    })
+    
     // アラーム通知の監視
     const handleAlarmTriggered = (alarmData: any) => {
       console.log('アラーム発動:', alarmData)
@@ -238,6 +244,7 @@ function App() {
     // クリーンアップ
     return () => {
       window.electronAPI?.removeSettingsUpdatedListener()
+      window.electronAPI?.removeAlarmSettingsUpdatedListener()
       // アラームリスナーのクリーンアップ（必要に応じて）
     }
   }, [loadSettings, loadAlarmSettings])

@@ -27,6 +27,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // アラーム設定関連
   loadAlarmSettings: (): Promise<AlarmSettings> => ipcRenderer.invoke('load-alarm-settings'),
   saveAlarmSettings: (settings: AlarmSettings): Promise<void> => ipcRenderer.invoke('save-alarm-settings', settings),
+  onAlarmSettingsUpdated: (callback: (settings: AlarmSettings) => void) => {
+    ipcRenderer.on('alarm-settings-updated', (_, settings) => callback(settings))
+  },
+  removeAlarmSettingsUpdatedListener: () => {
+    ipcRenderer.removeAllListeners('alarm-settings-updated')
+  },
   
   // アラーム通知関連
   onAlarmTriggered: (callback: (alarmData: any) => void) => {

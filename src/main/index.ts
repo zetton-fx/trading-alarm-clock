@@ -425,6 +425,14 @@ async function createWindow(): Promise<void> {
   ipcMain.handle('save-alarm-settings', async (_, settings: AlarmSettings): Promise<void> => {
     await saveAlarmSettings(settings)
     clearAlarmSettingsCache() // 設定変更時にキャッシュをクリア
+    
+    // 全てのウィンドウにアラーム設定更新を通知
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('alarm-settings-updated', settings)
+    }
+    if (alarmWindow && !alarmWindow.isDestroyed()) {
+      alarmWindow.webContents.send('alarm-settings-updated', settings)
+    }
   })
 
   // アセットファイルのパスを取得
@@ -556,7 +564,8 @@ const checkAlarms = async (): Promise<void> => {
       return
     }
 
-    const alarmSettings = await getAlarmSettings()
+    // アラーム発動時は常に最新の設定を読み込む（キャッシュを使わない）
+    const alarmSettings = await loadAlarmSettings()
     const now = new Date()
     const currentHour = now.getHours()
     const currentMinute = now.getMinutes()

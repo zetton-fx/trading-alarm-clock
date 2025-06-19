@@ -10,6 +10,8 @@ export interface ElectronAPI {
   saveSettings: (settings: AppSettings) => Promise<void>
   loadAlarmSettings: () => Promise<AlarmSettings>
   saveAlarmSettings: (settings: AlarmSettings) => Promise<void>
+  onAlarmSettingsUpdated: (callback: (settings: AlarmSettings) => void) => void
+  removeAlarmSettingsUpdatedListener: () => void
   onSettingsUpdated: (callback: (settings: AppSettings) => void) => void
   removeSettingsUpdatedListener: () => void
   expandWindowForButtons: () => void
@@ -30,6 +32,8 @@ declare global {
       saveSettings: (settings: AppSettings) => Promise<void>
       loadAlarmSettings: () => Promise<AlarmSettings>
       saveAlarmSettings: (settings: AlarmSettings) => Promise<void>
+      onAlarmSettingsUpdated: (callback: (settings: AlarmSettings) => void) => void
+      removeAlarmSettingsUpdatedListener: () => void
       onSettingsUpdated: (callback: (settings: AppSettings) => void) => void
       removeSettingsUpdatedListener: () => void
       expandWindowForButtons: () => void
