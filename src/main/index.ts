@@ -294,29 +294,9 @@ async function createWindow(): Promise<void> {
 
   mainWindow = new BrowserWindow(windowOptions)
 
-  // Windows でのタイトルバー非表示を確実にする
+  // Windows でのタイトルバー非表示を即座に適用（DOM読み込み前）
   if (process.platform === 'win32') {
-    // DOM読み込み完了時に初回適用
-    mainWindow.webContents.once('dom-ready', () => {
-      applyWindowsTitleBarHiding(mainWindow, 0)
-    })
-    
-    // ウィンドウフォーカス時にも設定を再適用
-    mainWindow.on('focus', () => {
-      applyWindowsTitleBarHiding(mainWindow, 0)
-    })
-    
-    // ウィンドウリサイズ時にも設定を再適用
-    mainWindow.on('resize', () => {
-      applyWindowsTitleBarHiding(mainWindow, 50)
-    })
-    
-    // ウィンドウ移動時にも設定を再適用
-    mainWindow.on('moved', () => {
-      if (process.platform === 'win32') {
-        mainWindow.setMenuBarVisibility(false)
-      }
-    })
+    applyWindowsTitleBarHiding(mainWindow, 0)
   }
 
   mainWindow.on('ready-to-show', () => {
