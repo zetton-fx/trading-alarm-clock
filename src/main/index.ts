@@ -375,25 +375,38 @@ async function createWindow(): Promise<void> {
     const currentSize = mainWindow.getSize()
     const { windowWidth, windowHeight } = sizeMapping[settings.size]
     
-    // サイズが実際に変更された場合のみsetSize()を実行
-    const sizeChanged = currentSize[0] !== windowWidth || currentSize[1] !== windowHeight
-    
-    if (sizeChanged) {
-      console.log(`ウィンドウサイズを変更: ${windowWidth}x${windowHeight} (サイズ設定: ${settings.size})`)
-      console.log(`変更前のウィンドウサイズ: ${currentSize[0]}x${currentSize[1]}`)
-      
-      // ウィンドウサイズを変更
-      mainWindow.setSize(windowWidth, windowHeight)
-      
-      // ウィンドウを中央に配置
-      mainWindow.center()
-      
-      // 変更後のサイズを確認
-      const newSize = mainWindow.getSize()
-      console.log(`変更後のウィンドウサイズ: ${newSize[0]}x${newSize[1]}`)
-    } else {
-      console.log('ウィンドウサイズは変更されませんでした')
+    // ウィンドウサイズを変更する前に Windows で最大化状態なら解除
+    if (process.platform === 'win32' && mainWindow.isMaximized()) {
+      console.log('Windows: ウィンドウが最大化状態のため unmaximize() を実行します')
+      mainWindow.unmaximize()
     }
+    
+    // ウィンドウサイズを変更する前に Linux や一部 WM では resizable=false のままでは
+    // ウィンドウを小さく出来ない場合があるため、一時的に true にしてから戻す
+    const wasResizable = mainWindow.isResizable()
+    if (!wasResizable) {
+      mainWindow.setResizable(true)
+    }
+
+    // ウィンドウサイズを変更
+    // Windows では setBounds の方が確実に反映されるケースがある
+    if (process.platform === 'win32') {
+      mainWindow.setBounds({ width: windowWidth, height: windowHeight })
+    } else {
+      mainWindow.setSize(windowWidth, windowHeight)
+    }
+
+    // 変更後に元の resizable 状態へ復帰
+    if (!wasResizable) {
+      mainWindow.setResizable(false)
+    }
+    
+    // ウィンドウを中央に配置
+    mainWindow.center()
+    
+    // 変更後のサイズを確認
+    const newSize = mainWindow.getSize()
+    console.log(`変更後のウィンドウサイズ: ${newSize[0]}x${newSize[1]}`)
     
     // alwaysOnTop設定は常に適用
     mainWindow.setAlwaysOnTop(settings.alwaysOnTop)
