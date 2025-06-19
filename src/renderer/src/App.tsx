@@ -61,10 +61,13 @@ function App() {
     try {
       console.log('音声再生開始:', soundFile)
       
-      // 既存の音声を停止
+      // 既存の音声を確実に停止
       if (currentAudio) {
+        console.log('既存音声を停止します')
         currentAudio.pause()
         currentAudio.currentTime = 0
+        currentAudio.src = '' // srcをクリアして完全に停止
+        setCurrentAudio(null)
       }
       
       // 複数の音声再生手法を試行
@@ -154,10 +157,15 @@ function App() {
   // 音声を停止する関数
   const stopAlarmAudio = () => {
     if (currentAudio) {
+      console.log('音声停止処理開始')
       currentAudio.pause()
       currentAudio.currentTime = 0
+      currentAudio.src = '' // srcをクリアして完全に停止
+      currentAudio.removeEventListener('ended', () => {}) // イベントリスナーもクリア
       setCurrentAudio(null)
-      console.log('音声停止')
+      console.log('音声停止完了')
+    } else {
+      console.log('停止する音声がありません')
     }
   }
 
@@ -277,7 +285,7 @@ function App() {
       // 既存のアラームがある場合は停止
       if (alarmNotification) {
         console.log('🔄 既存のアラームを停止して新しいメインアラームに切り替えます')
-        stopAlarmAudio()
+        // playAlarmAudio内で音声停止処理が行われるため、ここでは通知のみクリア
       }
       
       // 既存のタイマーをクリア
@@ -286,13 +294,15 @@ function App() {
         setAlarmTimeoutId(null)
       }
       
-      setAlarmNotification({
-        type: 'alarm',
+      const newNotification = {
+        type: 'alarm' as const,
         name: alarmData.name,
         hour: alarmData.hour,
         minute: alarmData.minute,
         timestamp: Date.now()
-      })
+      }
+      console.log('🔔 新しいメインアラーム通知を設定:', newNotification)
+      setAlarmNotification(newNotification)
       
       // 最新のアラーム設定を取得してから音声を再生
       const currentAlarmSettings = useAlarmStore.getState().settings
@@ -322,7 +332,7 @@ function App() {
       // 既存のアラームがある場合は停止
       if (alarmNotification) {
         console.log('🔄 既存のアラームを停止して新しい先行アラームに切り替えます')
-        stopAlarmAudio()
+        // playAlarmAudio内で音声停止処理が行われるため、ここでは通知のみクリア
       }
       
       // 既存のタイマーをクリア
@@ -331,13 +341,15 @@ function App() {
         setAlarmTimeoutId(null)
       }
       
-      setAlarmNotification({
-        type: 'pre-alarm',
+      const newNotification = {
+        type: 'pre-alarm' as const,
         name: alarmData.name,
         hour: alarmData.hour,
         minute: alarmData.minute,
         timestamp: Date.now()
-      })
+      }
+      console.log('🔔 新しい先行アラーム通知を設定:', newNotification)
+      setAlarmNotification(newNotification)
       
       // 最新のアラーム設定を取得してから音声を再生
       const currentAlarmSettings = useAlarmStore.getState().settings
