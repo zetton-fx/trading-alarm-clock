@@ -5,6 +5,13 @@ import SettingsWindow from './components/SettingsWindow'
 import AlarmWindow from './components/AlarmWindow'
 import { sizeMapping } from '../../shared/types/settings'
 
+// -------------------------------------------------------
+// グローバルに 1 本だけ保持する Audio インスタンス
+// どのコンポーネントから呼ばれても同じ Audio が使われるため
+// アラーム音が同時に複数鳴ることを物理的に防げる
+// -------------------------------------------------------
+let globalAudio: HTMLAudioElement | null = null
+
 function App() {
 
 
@@ -61,17 +68,18 @@ function App() {
     try {
       console.log('音声再生開始:', soundFile)
       
-      // 既存の音声を確実に停止
-      if (currentAudio) {
-        console.log('既存音声を停止します:', currentAudio.src)
+      // グローバル Audio を停止
+      if (globalAudio) {
+        console.log('既存音声を停止します:', globalAudio.src)
         try {
-          currentAudio.pause()
-          currentAudio.currentTime = 0
-          currentAudio.src = '' // srcをクリアして完全に停止
-          currentAudio.load() // リロードして完全にクリア
-        } catch (stopError) {
-          console.warn('音声停止中にエラー:', stopError)
+          globalAudio.pause()
+          globalAudio.currentTime = 0
+          globalAudio.src = ''
+          globalAudio.load()
+        } catch (stopErr) {
+          console.warn('音声停止中にエラー:', stopErr)
         }
+        globalAudio = null
         setCurrentAudio(null)
       }
       
@@ -119,7 +127,8 @@ function App() {
             }
           })
           
-          setCurrentAudio(audio) // 現在の音声を保存
+          globalAudio = audio // グローバルに保存
+          setCurrentAudio(audio) // React state にも保存（UI デバッグ用）
           console.log('音声再生成功:', src)
           return // 成功したら他の試行をスキップ
           
@@ -157,6 +166,7 @@ function App() {
       
       // 最後の試行
       await fallbackAudio.play()
+      globalAudio = fallbackAudio
       setCurrentAudio(fallbackAudio)
       console.log('fallback音声再生成功')
       
@@ -229,21 +239,21 @@ function App() {
 
   // 音声を停止する関数
   const stopAlarmAudio = () => {
-    if (currentAudio) {
-      console.log('音声停止処理開始:', currentAudio.src)
+    if (globalAudio) {
+      console.log('音声停止処理開始:', globalAudio.src)
       try {
-        currentAudio.pause()
-        currentAudio.currentTime = 0
-        currentAudio.src = '' // srcをクリアして完全に停止
-        currentAudio.load() // リロードして完全にクリア
-        // 全てのイベントリスナーをクリア
-        currentAudio.onended = null
-        currentAudio.onerror = null
-        currentAudio.onloadstart = null
-        currentAudio.oncanplay = null
+        globalAudio.pause()
+        globalAudio.currentTime = 0
+        globalAudio.src = ''
+        globalAudio.load()
+        globalAudio.onended = null
+        globalAudio.onerror = null
+        globalAudio.onloadstart = null
+        globalAudio.oncanplay = null
       } catch (stopError) {
         console.warn('音声停止処理中にエラー:', stopError)
       }
+      globalAudio = null
       setCurrentAudio(null)
       console.log('音声停止完了')
     } else {
@@ -372,7 +382,7 @@ function App() {
       // 既存のアラームがある場合は停止
       if (alarmNotification) {
         console.log('🔄 既存のアラームを停止して新しいメインアラームに切り替えます')
-        // playAlarmAudio内で音声停止処理が行われるため、ここでは通知のみクリア
+        setAlarmNotification(null) // ポップアップを確実に閉じる
       }
       
       // 既存のタイマーをクリア
@@ -421,7 +431,7 @@ function App() {
       // 既存のアラームがある場合は停止
       if (alarmNotification) {
         console.log('🔄 既存のアラームを停止して新しい先行アラームに切り替えます')
-        // playAlarmAudio内で音声停止処理が行われるため、ここでは通知のみクリア
+        setAlarmNotification(null) // ポップアップを確実に閉じる
       }
       
       // 既存のタイマーをクリア
