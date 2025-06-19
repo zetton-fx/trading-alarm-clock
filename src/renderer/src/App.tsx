@@ -63,12 +63,20 @@ function App() {
       
       // 既存の音声を確実に停止
       if (currentAudio) {
-        console.log('既存音声を停止します')
-        currentAudio.pause()
-        currentAudio.currentTime = 0
-        currentAudio.src = '' // srcをクリアして完全に停止
+        console.log('既存音声を停止します:', currentAudio.src)
+        try {
+          currentAudio.pause()
+          currentAudio.currentTime = 0
+          currentAudio.src = '' // srcをクリアして完全に停止
+          currentAudio.load() // リロードして完全にクリア
+        } catch (stopError) {
+          console.warn('音声停止中にエラー:', stopError)
+        }
         setCurrentAudio(null)
       }
+      
+      // 少し待機してから新しい音声を開始（確実に前の音声が停止するため）
+      await new Promise(resolve => setTimeout(resolve, 100))
       
       // 複数の音声再生手法を試行
       const audioSources = [
@@ -78,10 +86,14 @@ function App() {
         `src/assets/sounds/${soundFile}`
       ]
       
+      let createdAudios: HTMLAudioElement[] = [] // 作成したAudioオブジェクトを追跡
+      
       for (const src of audioSources) {
         try {
           console.log('音声ソース試行:', src)
           const audio = new Audio(src)
+          createdAudios.push(audio) // 作成したAudioを記録
+          
           audio.volume = volume / 100
           audio.preload = 'auto'
           audio.loop = true // ループ再生でアラームらしく
@@ -94,6 +106,19 @@ function App() {
           
           // 音声を即座に再生
           await audio.play()
+          
+          // 成功した場合、他の失敗したAudioオブジェクトをクリーンアップ
+          createdAudios.forEach(a => {
+            if (a !== audio) {
+              try {
+                a.pause()
+                a.src = ''
+              } catch (cleanupError) {
+                console.warn('Audio cleanup error:', cleanupError)
+              }
+            }
+          })
+          
           setCurrentAudio(audio) // 現在の音声を保存
           console.log('音声再生成功:', src)
           return // 成功したら他の試行をスキップ
@@ -103,6 +128,16 @@ function App() {
           continue // 次のソースを試行
         }
       }
+      
+      // 全て失敗した場合、作成したAudioオブジェクトをクリーンアップ
+      createdAudios.forEach(audio => {
+        try {
+          audio.pause()
+          audio.src = ''
+        } catch (cleanupError) {
+          console.warn('Final cleanup error:', cleanupError)
+        }
+      })
       
       // 全ての試行が失敗した場合の最後の手段
       console.log('全ての音声ソース試行が失敗、最後の手段を実行')
@@ -154,19 +189,69 @@ function App() {
     }
   }
 
+  // 全ての音声を強制停止する関数
+  const stopAllAudio = () => {
+    console.log('🔇 全ての音声を強制停止します')
+    
+    // ページ内の全てのaudioエレメントを取得して停止
+    const allAudioElements = document.querySelectorAll('audio')
+    allAudioElements.forEach((audio, index) => {
+      try {
+        console.log(`Audio要素 ${index} を停止:`, audio.src)
+        audio.pause()
+        audio.currentTime = 0
+        audio.src = ''
+        audio.load()
+      } catch (error) {
+        console.warn(`Audio要素 ${index} の停止中にエラー:`, error)
+      }
+    })
+    
+    // currentAudioも停止
+    if (currentAudio) {
+      try {
+        currentAudio.pause()
+        currentAudio.currentTime = 0
+        currentAudio.src = ''
+        currentAudio.load()
+        currentAudio.onended = null
+        currentAudio.onerror = null
+        currentAudio.onloadstart = null
+        currentAudio.oncanplay = null
+      } catch (error) {
+        console.warn('currentAudio停止中にエラー:', error)
+      }
+    }
+    
+    setCurrentAudio(null)
+    console.log('全ての音声停止完了')
+  }
+
   // 音声を停止する関数
   const stopAlarmAudio = () => {
     if (currentAudio) {
-      console.log('音声停止処理開始')
-      currentAudio.pause()
-      currentAudio.currentTime = 0
-      currentAudio.src = '' // srcをクリアして完全に停止
-      currentAudio.removeEventListener('ended', () => {}) // イベントリスナーもクリア
+      console.log('音声停止処理開始:', currentAudio.src)
+      try {
+        currentAudio.pause()
+        currentAudio.currentTime = 0
+        currentAudio.src = '' // srcをクリアして完全に停止
+        currentAudio.load() // リロードして完全にクリア
+        // 全てのイベントリスナーをクリア
+        currentAudio.onended = null
+        currentAudio.onerror = null
+        currentAudio.onloadstart = null
+        currentAudio.oncanplay = null
+      } catch (stopError) {
+        console.warn('音声停止処理中にエラー:', stopError)
+      }
       setCurrentAudio(null)
       console.log('音声停止完了')
     } else {
       console.log('停止する音声がありません')
     }
+    
+    // 念のため全ての音声も停止
+    stopAllAudio()
   }
 
   // アラーム通知が消える時に音声を確実に停止
