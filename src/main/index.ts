@@ -303,6 +303,21 @@ async function createWindow(): Promise<void> {
     mainWindow.show()
   })
 
+  // メインウィンドウがフォーカスを失ったとき（blur）にタイトルバーを強制的に非表示
+  mainWindow.on('blur', () => {
+    if (process.platform === 'win32') {
+      applyWindowsTitleBarHiding(mainWindow, 0)
+      applyWindowsTitleBarHiding(mainWindow, 50) // 念のため遅延実行も
+    }
+  })
+  
+  // メインウィンドウがフォーカスを得たとき（focus）にも再適用
+  mainWindow.on('focus', () => {
+    if (process.platform === 'win32') {
+      applyWindowsTitleBarHiding(mainWindow, 0)
+    }
+  })
+
   // メインウィンドウが閉じられる前の処理
   mainWindow.on('close', () => {
     console.log('メインウィンドウが閉じられています')
