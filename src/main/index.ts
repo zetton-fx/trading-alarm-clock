@@ -303,21 +303,20 @@ async function createWindow(): Promise<void> {
     mainWindow.show()
   })
 
-  // メインウィンドウがフォーカスを失ったとき（blur）にタイトルバーを強制的に非表示
-  mainWindow.on('blur', () => {
-    if (process.platform === 'win32') {
-      applyWindowsTitleBarHiding(mainWindow, 0)
-      applyWindowsTitleBarHiding(mainWindow, 50) // 念のため遅延実行も
+  // Electronのバグ(https://github.com/electron/electron/issues/46882)への対処
+  // framelessウィンドウでフォーカスが外れる(blur)とタイトルバーが表示される問題のため、
+  // フォーカスイベントのたびにウィンドウの強制的に再描画してタイトルバーを消すワークアラウンド。
+  const forceRepaint = () => {
+    if (process.platform === 'win32' && mainWindow && !mainWindow.isDestroyed()) {
+      // ウィンドウのシャドウを一度有効にしてから無効にすることで再描画を強制する
+      mainWindow.setHasShadow(true)
+      mainWindow.setHasShadow(false)
     }
-  })
-  
-  // メインウィンドウがフォーカスを得たとき（focus）にも再適用
-  mainWindow.on('focus', () => {
-    if (process.platform === 'win32') {
-      applyWindowsTitleBarHiding(mainWindow, 0)
-    }
-  })
+  }
 
+  mainWindow.on('blur', forceRepaint)
+  mainWindow.on('focus', forceRepaint)
+  
   // メインウィンドウが閉じられる前の処理
   mainWindow.on('close', () => {
     console.log('メインウィンドウが閉じられています')
