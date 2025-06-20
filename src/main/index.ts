@@ -360,13 +360,10 @@ async function createWindow(): Promise<void> {
       console.log('Windows: ウィンドウが最大化状態のため unmaximize() を実行します')
       mainWindow.unmaximize()
     }
-    
-    // ウィンドウサイズを変更する前に Linux や一部 WM では resizable=false のままでは
-    // ウィンドウを小さく出来ない場合があるため、一時的に true にしてから戻す
-    const wasResizable = mainWindow.isResizable()
-    if (!wasResizable) {
-      mainWindow.setResizable(true)
-    }
+
+    // ウィンドウサイズを固定し、リサイズ不可に設定
+    mainWindow.setMinimumSize(windowWidth, windowHeight)
+    mainWindow.setMaximumSize(windowWidth, windowHeight)
 
     // ウィンドウサイズを変更
     // Windows では setBounds の方が確実に反映されるケースがある
@@ -376,11 +373,9 @@ async function createWindow(): Promise<void> {
       mainWindow.setSize(windowWidth, windowHeight)
     }
 
-    // 変更後に元の resizable 状態へ復帰
-    if (!wasResizable) {
-      mainWindow.setResizable(false)
-    }
-    
+    // 変更後に resizable を false に設定（念のため）
+    mainWindow.setResizable(false)
+
     // ウィンドウを中央に配置
     mainWindow.center()
     
