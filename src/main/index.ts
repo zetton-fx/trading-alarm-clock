@@ -503,8 +503,6 @@ function createSettingsWindow(): void {
     show: false,
     autoHideMenuBar: true,
     resizable: true,
-    parent: mainWindow,
-    modal: true,
     title: '設定',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -520,11 +518,6 @@ function createSettingsWindow(): void {
 
   settingsWindow.on('closed', () => {
     settingsWindow = null
-
-    // 設定ウィンドウを閉じた直後にタイトルバーを再非表示（フォーカス復帰時のチラつき防止）
-    if (process.platform === 'win32' && mainWindow && !mainWindow.isDestroyed()) {
-      applyWindowsTitleBarHiding(mainWindow, 0)
-    }
   })
 
   // 設定ウィンドウは同じアプリを読み込むが、URLフラグメントで区別
