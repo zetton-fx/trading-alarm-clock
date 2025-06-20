@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest] # macos-latest
+        os: [macos-latest, windows-latest]
 
     steps:
     - uses: actions/checkout@v4
@@ -69,6 +69,7 @@ jobs:
           以下からバイナリをダウンロードできます：
           
           - [Windows版をダウンロード](https://github.com/${owner}/${repo}/actions/runs/${runId})
+          - [macOS版をダウンロード](https://github.com/${owner}/${repo}/actions/runs/${runId})
           
           Actions画面の「Artifacts」セクションからダウンロードしてください。
           
