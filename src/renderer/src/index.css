@@ -49,7 +49,16 @@ body {
 
 /* ドラッグできない要素 (ボタンなど) */
 .no-drag {
+  -webkit-app-region: no-drag;
   cursor: default;
 }
 
+/* ドラッグ可能な要素 */
+.draggable {
+  -webkit-app-region: drag;
+}
+
 /* アプリケーション全体でテキスト選択を無効化 */
+* {
+  user-select: none;
+}
