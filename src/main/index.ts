@@ -14,45 +14,78 @@ const getAlarmSettingsPath = (): string => {
   return join(app.getPath('userData'), 'alarms.json')
 }
 
+// 設定ファイルを削除する内部関数
+const deleteSettingsFiles = async (): Promise<void> => {
+  const settingsPath = getSettingsPath()
+  const alarmSettingsPath = getAlarmSettingsPath()
+  try {
+    await fs.unlink(settingsPath)
+    console.log('古い設定ファイルを削除しました:', settingsPath)
+  } catch (error: any) {
+    if (error.code !== 'ENOENT') {
+      console.error('設定ファイルの削除に失敗しました:', error)
+    }
+  }
+  try {
+    await fs.unlink(alarmSettingsPath)
+    console.log('古いアラーム設定ファイルを削除しました:', alarmSettingsPath)
+  } catch (error: any) {
+    if (error.code !== 'ENOENT') {
+      console.error('アラーム設定ファイルの削除に失敗しました:', error)
+    }
+  }
+}
+
 // 設定の読み込み
 const loadSettings = async (): Promise<AppSettings> => {
+  const settingsPath = getSettingsPath()
   try {
-    const settingsPath = getSettingsPath()
     const data = await fs.readFile(settingsPath, 'utf-8')
     const parsedSettings = JSON.parse(data)
-    console.log('設定ファイルを読み込みました:', settingsPath)
-    // デフォルト設定とマージして、新しいプロパティがあっても対応
-    return { ...defaultSettings, ...parsedSettings }
-  } catch (error: any) {
-    if (error.code === 'ENOENT') {
-      console.log('初回起動：設定ファイルを作成します')
-      // 初回起動時に設定ファイルを作成
-      await saveSettings(defaultSettings)
-      return defaultSettings
-    } else {
-      console.log('設定ファイルの読み込み中にエラーが発生しました。デフォルト設定を使用します:', error.message)
-      return defaultSettings
+    
+    // バリデーション：sizeプロパティがsizeMappingに存在するか確認
+    const settingsToValidate = { ...defaultSettings, ...parsedSettings }
+    const sizeMapping =
+      settingsToValidate.displayFormat === 'time' ? sizeMappingTime : sizeMappingDateTime
+    if (!sizeMapping.hasOwnProperty(settingsToValidate.size)) {
+      throw new Error(`設定ファイルの 'size' (${settingsToValidate.size}) が無効です。`)
     }
+    
+    console.log('設定ファイルを正常に読み込みました:', settingsPath)
+    return settingsToValidate
+  } catch (error: any) {
+    console.log(`設定ファイルの読み込みまたは検証でエラーが発生したためリセットします: ${error.message}`)
+    await deleteSettingsFiles()
+    await saveSettings(defaultSettings)
+    return defaultSettings
   }
 }
 
 // アラーム設定の読み込み
 const loadAlarmSettings = async (): Promise<AlarmSettings> => {
+  const alarmSettingsPath = getAlarmSettingsPath()
   try {
-    const alarmSettingsPath = getAlarmSettingsPath()
     const data = await fs.readFile(alarmSettingsPath, 'utf-8')
     const parsedSettings = JSON.parse(data)
-    console.log('アラーム設定ファイルを読み込みました:', alarmSettingsPath)
-    // デフォルト設定とマージして、新しいプロパティがあっても対応
+    console.log('アラーム設定ファイルを正常に読み込みました:', alarmSettingsPath)
     return { ...defaultAlarmSettings, ...parsedSettings }
   } catch (error: any) {
     if (error.code === 'ENOENT') {
-      console.log('初回起動：アラーム設定ファイルを作成します')
-      // 初回起動時にアラーム設定ファイルを作成
+      console.log('初回起動またはリセット後：アラーム設定ファイルを作成します')
       await saveAlarmSettings(defaultAlarmSettings)
       return defaultAlarmSettings
     } else {
-      console.log('アラーム設定ファイルの読み込み中にエラーが発生しました。デフォルト設定を使用します:', error.message)
+      console.log(
+        `アラーム設定ファイルの読み込みでエラーが発生したため、全ての設定をリセットします: ${error.message}`
+      )
+      await deleteSettingsFiles()
+      await saveSettings(defaultSettings)
+      await saveAlarmSettings(defaultAlarmSettings)
+      
+      // メモリ上のメイン設定もデフォルトにリセット
+      cachedSettings = defaultSettings
+      console.log('メモリ上のメイン設定もデフォルトにリセットしました。')
+      
       return defaultAlarmSettings
     }
   }
@@ -252,7 +285,16 @@ const applyWindowsTitleBarHiding = (window: BrowserWindow, delay: number = 0): v
 async function createWindow(): Promise<void> {
   // メモリにロードされた設定を取得
   const settings = getSettings()
+  
+  // バリデーション：createWindowが呼ばれる時点では設定は検証済みのはずだが、念のためここでも確認
   const sizeMapping = settings.displayFormat === 'time' ? sizeMappingTime : sizeMappingDateTime
+  if (!sizeMapping.hasOwnProperty(settings.size)) {
+    console.error(`無効なサイズ設定(${settings.size})でウィンドウを作成しようとしました。アプリを再起動してください。`)
+    // ここでアプリを終了させるか、フォールバック処理を行う
+    app.quit()
+    return
+  }
+  
   const { windowWidth, windowHeight } = sizeMapping[settings.size]
 
   // メインウィンドウを作成
@@ -337,6 +379,15 @@ async function createWindow(): Promise<void> {
     createAlarmWindow()
   })
 
+  // 手動で全設定を削除してアプリを再起動するコマンド
+  ipcMain.handle('delete-all-settings', async () => {
+    console.log('レンダラーからの要求により、すべての設定ファイルを削除します。')
+    await deleteSettingsFiles()
+    console.log('設定をリセットするためにアプリを再起動します。')
+    app.relaunch()
+    app.exit()
+  })
+
   // 設定の保存・読み込み
   ipcMain.handle('load-settings', async (): Promise<AppSettings> => {
     return getSettings()
@@ -349,6 +400,15 @@ async function createWindow(): Promise<void> {
     // 現在のサイズを取得
     const currentSize = mainWindow.getSize()
     const sizeMapping = settings.displayFormat === 'time' ? sizeMappingTime : sizeMappingDateTime
+    
+    // バリデーション
+    if (!sizeMapping.hasOwnProperty(settings.size)) {
+      console.error(
+        `保存しようとした設定のサイズ(${settings.size})が無効です。処理を中断します。`
+      )
+      return
+    }
+    
     const { windowWidth, windowHeight } = sizeMapping[settings.size]
     
     // ウィンドウサイズを変更する前に Windows で最大化状態なら解除
