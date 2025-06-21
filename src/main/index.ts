@@ -303,29 +303,9 @@ async function createWindow(): Promise<void> {
     mainWindow.show()
   })
 
-  // Electronのバグ(https://github.com/electron/electron/issues/46882)への対処
-  // framelessウィンドウでフォーカスが外れる(blur)とタイトルバーが表示される問題のため、
-  // フォーカスイベントのたびにウィンドウの強制的に再描画してタイトルバーを消すワークアラウンド。
-  const forceRepaint = () => {
-    if (process.platform === 'win32' && mainWindow && !mainWindow.isDestroyed()) {
-      // ウィンドウのシャドウを一度有効にしてから無効にすることで再描画を強制する
-      mainWindow.setHasShadow(true)
-      mainWindow.setHasShadow(false)
-    }
-  }
-
-  mainWindow.on('blur', forceRepaint)
-  mainWindow.on('focus', forceRepaint)
-  
   // メインウィンドウが閉じられる前の処理
   mainWindow.on('close', () => {
     console.log('メインウィンドウが閉じられています')
-    stopAlarmCheck()
-  })
-
-  // メインウィンドウが破棄される前の処理
-  mainWindow.on('closed', () => {
-    console.log('メインウィンドウが破棄されました')
     stopAlarmCheck()
   })
 
@@ -354,6 +334,22 @@ async function createWindow(): Promise<void> {
 
   ipcMain.on('open-alarm-window', () => {
     createAlarmWindow()
+  })
+
+  // ウィンドウ位置を動かすためのIPCハンドラ
+  ipcMain.on('set-window-position', (_, { x, y }: { x: number; y: number }) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setPosition(x, y)
+    }
+  })
+
+  // ウィンドウ位置を取得するためのIPCハンドラ
+  ipcMain.handle('get-window-position', (): { x: number; y: number } | null => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const [x, y] = mainWindow.getPosition()
+      return { x, y }
+    }
+    return null
   })
 
   // 設定の保存・読み込み
@@ -497,7 +493,6 @@ async function createWindow(): Promise<void> {
     
     return fullPath
   })
-
 
 }
 

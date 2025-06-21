@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useSettingsStore } from './store/settingsStore'
 import { useAlarmStore } from './store/alarmStore'
 import SettingsWindow from './components/SettingsWindow'
 import AlarmWindow from './components/AlarmWindow'
 import { sizeMapping } from '../../shared/types/settings'
+import { useWindowDrag } from './hooks/useWindowDrag'
 
 // -------------------------------------------------------
 // グローバルに 1 本だけ保持する Audio インスタンス
@@ -612,22 +613,19 @@ function App() {
 
   const currentSizeSettings = sizeMapping[settings.size]
 
+  const dragRef = useRef<HTMLDivElement>(null)
+  useWindowDrag(dragRef)
+
   return (
     <>
       <div className="relative w-full h-full" style={{ backgroundColor: 'transparent' }}>
-        {/* ドラッグ可能なアプリ左側の範囲（時計に被る幅） */}
-        <div
-          className="absolute top-0 left-0 w-[40%] h-full drag-region cursor-move hover:bg-blue-300 bg-opacity-50 z-20"
-        />
-
         {/* 時計＋ボタン部分 */}
-        <div 
-          className="relative z-10 flex items-center justify-center h-full group"
-          onMouseEnter={() => window.electronAPI?.expandWindowForButtons()}
-          onMouseLeave={() => window.electronAPI?.restoreWindowSize()}
+        <div
+          ref={dragRef}
+          className="relative z-10 flex items-center justify-center h-full group cursor-move"
         >
           {/* 時計本体 */}
-          <div className="relative text-center">
+          <div className="relative text-center w-full h-full">
             {/* ボタン：hover時に表示 - 時計の右上に配置（ウィンドウサイズが動的に調整される） */}
             <div className="absolute -top-2 -right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 no-drag z-30">
               {/* 設定ボタン */}
@@ -671,7 +669,7 @@ function App() {
             </div>
 
             <div 
-              className={`px-8 py-4 rounded-lg border-2 shadow-lg ${getFontClass()}`}
+              className={`w-full h-full flex flex-col items-center justify-center rounded-lg border-2 shadow-lg ${getFontClass()}`}
               style={getBoxStyle()}
             >
 
@@ -775,4 +773,4 @@ function App() {
   )
 }
 
-export default App
+export default App 

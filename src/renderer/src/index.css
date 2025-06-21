@@ -10,6 +10,7 @@ html, body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  user-select: none;
 }
 
 /* Windows用タイトルバー完全非表示 */
@@ -46,17 +47,9 @@ body {
   letter-spacing: 0.1em;
 } 
 
-/* アプリをドラッグできるようにする */
-.drag-region {
-  -webkit-app-region: drag;
-  cursor: move !important;
-}
-
-.drag-region:hover {
-  cursor: move !important;
-}
-
 /* ドラッグできない要素 (ボタンなど) */
 .no-drag {
-  -webkit-app-region: no-drag;
+  cursor: default;
 }
+
+/* アプリケーション全体でテキスト選択を無効化 */
