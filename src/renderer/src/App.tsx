@@ -3,7 +3,7 @@ import { useSettingsStore } from './store/settingsStore'
 import { useAlarmStore } from './store/alarmStore'
 import SettingsWindow from './components/SettingsWindow'
 import AlarmWindow from './components/AlarmWindow'
-import { sizeMapping } from '../../shared/types/settings'
+import { sizeMappingDateTime, sizeMappingTime } from '../../shared/types/settings'
 import { useWindowDrag } from './hooks/useWindowDrag'
 
 // -------------------------------------------------------
@@ -611,6 +611,7 @@ function App() {
     }
   }
 
+  const sizeMapping = settings.displayFormat === 'time' ? sizeMappingTime : sizeMappingDateTime
   const currentSizeSettings = sizeMapping[settings.size]
 
   const dragRef = useRef<HTMLDivElement>(null)
@@ -674,28 +675,34 @@ function App() {
             >
 
               
-              {date && (
-                <>
-                  <div 
-                    style={{
-                      ...getTextStyle(),
-                      fontSize: `${currentSizeSettings.fontSize.date}px`
-                    }}
-                    className="mb-2 select-none"
-                  >
-                    {date}
-                  </div>
-                  <div 
-                    className="my-2" 
-                    style={{ 
-                      borderColor: settings.textColor, 
-                      borderTopWidth: 1,
-                      boxShadow: settings.glowIntensity > 0 
-                        ? `0 0 ${settings.glowIntensity * 1}px ${settings.glowColor}, 0 0 ${settings.glowIntensity * 3}px ${settings.glowColor}aa` 
-                        : `0 0 1px ${settings.glowColor}44`
-                    }} 
-                  />
-                </>
+              {settings.displayFormat === 'datetime' && date && (
+                (() => {
+                  const sizeMapping = sizeMappingDateTime;
+                  const currentSizeSettings = sizeMapping[settings.size];
+                  return (
+                    <>
+                      <div 
+                        style={{
+                          ...getTextStyle(),
+                          fontSize: `${currentSizeSettings.fontSize.date}px`
+                        }}
+                        className="mb-2 select-none"
+                      >
+                        {date}
+                      </div>
+                      <div 
+                        className="my-2" 
+                        style={{ 
+                          borderColor: settings.textColor, 
+                          borderTopWidth: 1,
+                          boxShadow: settings.glowIntensity > 0 
+                            ? `0 0 ${settings.glowIntensity * 1}px ${settings.glowColor}, 0 0 ${settings.glowIntensity * 3}px ${settings.glowColor}aa` 
+                            : `0 0 1px ${settings.glowColor}44`
+                        }} 
+                      />
+                    </>
+                  )
+                })()
               )}
               <div 
                 style={{
