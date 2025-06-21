@@ -23,6 +23,8 @@ export interface ElectronAPI {
   debugGetMemoryAlarmSettings: () => Promise<any>
   getWindowPosition: () => Promise<{ x: number; y: number } | null>
   setWindowPosition: (position: { x: number; y: number }) => void
+  dragStart: () => void
+  dragEnd: () => void
 }
 
 declare global {
@@ -49,6 +51,8 @@ declare global {
       debugGetMemoryAlarmSettings: () => Promise<any>
       getWindowPosition: () => Promise<{ x: number; y: number } | null>
       setWindowPosition: (position: { x: number; y: number }) => void
+      dragStart: () => void
+      dragEnd: () => void
     }
   }
 } 

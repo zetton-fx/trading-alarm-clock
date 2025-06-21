@@ -65,7 +65,11 @@ const api = {
   // ウィンドウ位置を非同期に取得する関数
   getWindowPosition: (): Promise<{ x: number; y: number } | null> => ipcRenderer.invoke('get-window-position'),
   // ウィンドウ位置を設定する関数
-  setWindowPosition: (position: { x: number; y: number }): void => ipcRenderer.send('set-window-position', position)
+  setWindowPosition: (position: { x: number; y: number }): void => ipcRenderer.send('set-window-position', position),
+  // ドラッグ開始を通知する関数
+  dragStart: (): void => ipcRenderer.send('drag-start'),
+  // ドラッグ終了を通知する関数
+  dragEnd: (): void => ipcRenderer.send('drag-end')
 }
 
 contextBridge.exposeInMainWorld('electronAPI', api) 

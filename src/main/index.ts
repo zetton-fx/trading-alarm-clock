@@ -105,6 +105,11 @@ let recentAlarms: Map<string, number> = new Map() // 最近鳴ったアラーム
 let cachedAlarmSettings: AlarmSettings | null = null // メモリにロードされたアラーム設定
 let cachedSettings: AppSettings | null = null // メモリにロードされたメイン設定
 
+// ウィンドウドラッグ関連の変数
+let isDragging = false // ドラッグ状態の管理
+let dragStartTime = 0 // ドラッグ開始時刻
+let lastPositionUpdateTime = 0 // 最後の位置更新時刻
+
 // アラーム設定をメモリから取得（必ずメモリにロードされている前提）
 const getAlarmSettings = (): AlarmSettings => {
   if (!cachedAlarmSettings) {
@@ -337,10 +342,64 @@ async function createWindow(): Promise<void> {
     createAlarmWindow()
   })
 
-  // ウィンドウ位置を動かすためのIPCハンドラ
+  // ドラッグ開始を通知するIPCハンドラ
+  ipcMain.on('drag-start', () => {
+    isDragging = true
+    dragStartTime = Date.now()
+    console.log('ドラッグ開始')
+  })
+
+  // ドラッグ終了を通知するIPCハンドラ
+  ipcMain.on('drag-end', () => {
+    isDragging = false
+    console.log('ドラッグ終了')
+  })
+
+  // ウィンドウ位置を動かすためのIPCハンドラ（改良版）
   ipcMain.on('set-window-position', (_, { x, y }: { x: number; y: number }) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.setPosition(x, y)
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      return
+    }
+
+    const now = Date.now()
+    
+    // Windows環境での特別な処理
+    if (process.platform === 'win32') {
+      // 位置更新の頻度制限（60fps以下に制限）
+      if (now - lastPositionUpdateTime < 16) {
+        return
+      }
+      lastPositionUpdateTime = now
+      
+      // ドラッグ中の場合、より安全な方法で位置を設定
+      if (isDragging) {
+        try {
+          // 現在のウィンドウ状態を確認
+          if (mainWindow.isMaximized()) {
+            mainWindow.unmaximize()
+          }
+          
+          // setBoundsを使用してより確実に位置を設定
+          const currentBounds = mainWindow.getBounds()
+          mainWindow.setBounds({
+            x: Math.round(x),
+            y: Math.round(y),
+            width: currentBounds.width,
+            height: currentBounds.height
+          }, false) // アニメーションを無効化
+          
+        } catch (error) {
+          console.error('Windows環境でのウィンドウ位置設定エラー:', error)
+          // フォールバック：通常のsetPositionを使用
+          mainWindow.setPosition(Math.round(x), Math.round(y))
+        }
+      } else {
+        // ドラッグ中でない場合は通常の方法
+        mainWindow.setPosition(Math.round(x), Math.round(y))
+      }
+    } else {
+      // Windows以外の環境では通常の処理
+      mainWindow.setPosition(Math.round(x), Math.round(y))
     }
   })
 
