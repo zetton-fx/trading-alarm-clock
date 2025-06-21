@@ -52,4 +52,9 @@ export const sizeMapping = {
   4: { windowWidth: 500, windowHeight: 275, fontSize: { date: 36, time: 54 } },
   5: { windowWidth: 550, windowHeight: 300, fontSize: { date: 40, time: 60 } },
   6: { windowWidth: 2048, windowHeight: 1024, fontSize: { date: 120, time: 180 } }
-}; 
+};
+
+// SettingsSize型をsizeMappingのキーから動的に生成
+export type SettingsSize = keyof typeof sizeMapping;
+
+export const fontStyles = ['DSEG7', 'DSEG14'] as const 
