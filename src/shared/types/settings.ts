@@ -1,6 +1,6 @@
 export interface AppSettings {
-  // サイズ設定（1-5の5段階）
-  size: 1 | 2 | 3 | 4 | 5;
+  // サイズ設定（1-6の6段階）
+  size: 1 | 2 | 3 | 4 | 5 | 6;
   
   // 常に前面表示フラグ
   alwaysOnTop: boolean;
@@ -46,9 +46,10 @@ export const defaultSettings: AppSettings = {
 
 // サイズに対応するウィンドウサイズとフォントサイズのマッピング
 export const sizeMapping = {
-  1: { windowWidth: 300, windowHeight: 150, fontSize: { date: 24, time: 36 } },
-  2: { windowWidth: 350, windowHeight: 175, fontSize: { date: 28, time: 42 } },
-  3: { windowWidth: 400, windowHeight: 200, fontSize: { date: 32, time: 48 } },
-  4: { windowWidth: 450, windowHeight: 225, fontSize: { date: 36, time: 54 } },
-  5: { windowWidth: 500, windowHeight: 250, fontSize: { date: 40, time: 60 } }
+  1: { windowWidth: 350, windowHeight: 200, fontSize: { date: 24, time: 36 } },
+  2: { windowWidth: 400, windowHeight: 225, fontSize: { date: 28, time: 42 } },
+  3: { windowWidth: 450, windowHeight: 250, fontSize: { date: 32, time: 48 } },
+  4: { windowWidth: 500, windowHeight: 275, fontSize: { date: 36, time: 54 } },
+  5: { windowWidth: 550, windowHeight: 300, fontSize: { date: 40, time: 60 } },
+  6: { windowWidth: 2048, windowHeight: 1024, fontSize: { date: 120, time: 180 } }
 }; 

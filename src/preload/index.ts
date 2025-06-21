@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { AppSettings } from '../shared/types/settings'
+import { AlarmSettings } from '../shared/types/alarm'
 
 // プリロードスクリプト：セキュアな通信のために使用
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -7,6 +8,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform,
   closeApp: () => ipcRenderer.send('app-close'),
   openSettings: () => ipcRenderer.send('open-settings'),
+  openAlarmWindow: () => ipcRenderer.send('open-alarm-window'),
+  
+  // ウィンドウサイズ調整
+  expandWindowForButtons: () => ipcRenderer.send('expand-window-for-buttons'),
+  restoreWindowSize: () => ipcRenderer.send('restore-window-size'),
   
   // 設定関連
   loadSettings: (): Promise<AppSettings> => ipcRenderer.invoke('load-settings'),
@@ -16,5 +22,31 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   removeSettingsUpdatedListener: () => {
     ipcRenderer.removeAllListeners('settings-updated')
-  }
+  },
+  
+  // アラーム設定関連
+  loadAlarmSettings: (): Promise<AlarmSettings> => ipcRenderer.invoke('load-alarm-settings'),
+  saveAlarmSettings: (settings: AlarmSettings): Promise<void> => ipcRenderer.invoke('save-alarm-settings', settings),
+  onAlarmSettingsUpdated: (callback: (settings: AlarmSettings) => void) => {
+    ipcRenderer.on('alarm-settings-updated', (_, settings) => callback(settings))
+  },
+  removeAlarmSettingsUpdatedListener: () => {
+    ipcRenderer.removeAllListeners('alarm-settings-updated')
+  },
+  
+  // アラーム通知関連
+  onAlarmTriggered: (callback: (alarmData: any) => void) => {
+    ipcRenderer.on('alarm-triggered', (_, alarmData) => callback(alarmData))
+  },
+  onPreAlarmTriggered: (callback: (alarmData: any) => void) => {
+    ipcRenderer.on('pre-alarm-triggered', (_, alarmData) => callback(alarmData))
+  },
+  
+  // アセットファイル関連
+  getAssetPath: (assetPath: string): Promise<string> => ipcRenderer.invoke('get-asset-path', assetPath),
+  
+  // デバッグ用関数
+  debugGetMemorySettings: (): Promise<any> => ipcRenderer.invoke('debug-get-memory-settings'),
+  debugGetMemoryAlarmSettings: (): Promise<any> => ipcRenderer.invoke('debug-get-memory-alarm-settings'),
+
 }) 

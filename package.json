@@ -34,7 +34,7 @@
     "devDependencies": {
         "@types/react": "^19.0.5",
         "@types/react-dom": "^19.0.3",
-        "electron": "^36.4.0",
+        "electron": "35.2.1",
         "electron-builder": "^26.0.12",
         "electron-vite": "^3.1.0",
         "typescript": "^5.7.5",
@@ -44,12 +44,19 @@
         "appId": "com.github.zetton-fx.trading-alarm-clock",
         "productName": "Trading Alarm Clock",
         "files": [
-            "out/**/*"
+            "out/**/*",
+            "src/assets/**/*"
         ],
         "directories": {
             "buildResources": "build",
             "output": "release"
         },
+        "extraResources": [
+            {
+                "from": "src/assets",
+                "to": "assets"
+            }
+        ],
         "win": {
             "target": [
                 "nsis"
