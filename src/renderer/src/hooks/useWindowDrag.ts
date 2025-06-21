@@ -2,8 +2,8 @@ import { useRef, useEffect, RefObject } from 'react'
 
 export const useWindowDrag = (draggableRef: RefObject<HTMLElement | null>): void => {
   const isDragging = useRef(false)
-  const initialMousePos = useRef({ x: 0, y: 0 })
-  const initialWindowPos = useRef({ x: 0, y: 0 })
+  // マウスカーソルとウィンドウ左上の相対位置（オフセット）を保持
+  const dragOffset = useRef({ x: 0, y: 0 })
 
   useEffect(() => {
     const handleMouseDown = async (e: MouseEvent) => {
@@ -11,24 +11,32 @@ export const useWindowDrag = (draggableRef: RefObject<HTMLElement | null>): void
       if ((e.target as HTMLElement).closest('button, a, input, select, textarea')) {
         return
       }
-      
-      // 現在のウィンドウ位置を非同期で取得
-      const currentWindowPos = await window.electronAPI.getWindowPosition()
-      if (!currentWindowPos) return
 
       isDragging.current = true
-      initialMousePos.current = { x: e.screenX, y: e.screenY }
-      initialWindowPos.current = currentWindowPos
+      
+      // 現在のウィンドウとカーソルの位置を一度だけ取得
+      const windowPos = await window.electronAPI.getWindowPosition()
+      const cursorPoint = await window.electronAPI.getCursorScreenPoint()
+
+      if (windowPos) {
+        // ドラッグ開始時のオフセットを計算して保存
+        dragOffset.current = {
+          x: windowPos.x - cursorPoint.x,
+          y: windowPos.y - cursorPoint.y
+        }
+      }
     }
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = async (e: MouseEvent) => {
       if (isDragging.current) {
-        const dx = e.screenX - initialMousePos.current.x
-        const dy = e.screenY - initialMousePos.current.y
-        const newX = initialWindowPos.current.x + dx
-        const newY = initialWindowPos.current.y + dy
-
-        // メインプロセスにウィンドウの移動を依頼
+        // リアルタイムでカーソル位置を取得
+        const cursorPoint = await window.electronAPI.getCursorScreenPoint()
+        
+        // カーソル位置にオフセットを加算して、新しいウィンドウ位置を決定
+        const newX = cursorPoint.x + dragOffset.current.x
+        const newY = cursorPoint.y + dragOffset.current.y
+        
+        // メインプロセスにウィンドウの移動を要求
         window.electronAPI.setWindowPosition({ x: newX, y: newY })
       }
     }
@@ -40,7 +48,6 @@ export const useWindowDrag = (draggableRef: RefObject<HTMLElement | null>): void
     const draggableElement = draggableRef.current
     if (draggableElement) {
       draggableElement.addEventListener('mousedown', handleMouseDown)
-      // ドラッグ中にカーソルがウィンドウ外に出ても追従できるよう、mousemoveとmouseupはグローバルに設定
       window.addEventListener('mousemove', handleMouseMove)
       window.addEventListener('mouseup', handleMouseUp)
     }
@@ -53,4 +60,4 @@ export const useWindowDrag = (draggableRef: RefObject<HTMLElement | null>): void
       window.removeEventListener('mouseup', handleMouseUp)
     }
   }, [draggableRef])
-} 
+}

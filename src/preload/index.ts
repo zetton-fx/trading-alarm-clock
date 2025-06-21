@@ -62,6 +62,9 @@ const api = {
   debugGetMemorySettings: (): Promise<any> => ipcRenderer.invoke('debug-get-memory-settings'),
   debugGetMemoryAlarmSettings: (): Promise<any> => ipcRenderer.invoke('debug-get-memory-alarm-settings'),
   
+  // グローバルなカーソル位置を取得
+  getCursorScreenPoint: (): Promise<{ x: number, y: number }> => ipcRenderer.invoke('get-cursor-screen-point'),
+  
   // ウィンドウ位置を非同期に取得する関数
   getWindowPosition: (): Promise<{ x: number; y: number } | null> => ipcRenderer.invoke('get-window-position'),
   // ウィンドウ位置を設定する関数
