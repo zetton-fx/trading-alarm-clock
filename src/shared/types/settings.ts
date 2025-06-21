@@ -1,6 +1,6 @@
 export interface AppSettings {
   // サイズ設定（1-6の6段階）
-  size: 1 | 2 | 3 | 4 | 5 | 6;
+  size: 1 | 2 | 3 | 4 | 5;
   
   // 常に前面表示フラグ
   alwaysOnTop: boolean;
@@ -46,22 +46,22 @@ export const defaultSettings: AppSettings = {
 
 // 日時表示用のサイズマッピング
 export const sizeMappingDateTime = {
-  1: { windowWidth: 350, windowHeight: 200, fontSize: { date: 24, time: 36 } },
-  2: { windowWidth: 400, windowHeight: 225, fontSize: { date: 28, time: 42 } },
-  3: { windowWidth: 450, windowHeight: 250, fontSize: { date: 32, time: 48 } },
-  4: { windowWidth: 500, windowHeight: 275, fontSize: { date: 36, time: 54 } },
-  5: { windowWidth: 550, windowHeight: 300, fontSize: { date: 40, time: 60 } },
-  6: { windowWidth: 2048, windowHeight: 1024, fontSize: { date: 120, time: 180 } }
+  1: { windowWidth: 220, windowHeight: 120, fontSize: { date: 20, time: 30 } },
+  2: { windowWidth: 302, windowHeight: 153, fontSize: { date: 28, time: 42 } },
+  3: { windowWidth: 385, windowHeight: 172, fontSize: { date: 32, time: 54 } },
+  4: { windowWidth: 468, windowHeight: 192, fontSize: { date: 36, time: 66 } },
+  5: { windowWidth: 550, windowHeight: 210, fontSize: { date: 40, time: 78 } },
+  // 6: { windowWidth: 2048, windowHeight: 1024, fontSize: { date: 120, time: 180 } }
 };
 
 // 時刻のみ表示用のサイズマッピング
 export const sizeMappingTime = {
-  1: { windowWidth: 350, windowHeight: 100, fontSize: { time: 48 } },
-  2: { windowWidth: 400, windowHeight: 112, fontSize: { time: 56 } },
-  3: { windowWidth: 450, windowHeight: 125, fontSize: { time: 64 } },
-  4: { windowWidth: 500, windowHeight: 138, fontSize: { time: 72 } },
-  5: { windowWidth: 550, windowHeight: 150, fontSize: { time: 80 } },
-  6: { windowWidth: 2048, windowHeight: 512, fontSize: { time: 240 } }
+  1: { windowWidth: 220, windowHeight: 80, fontSize: { time: 30 } },
+  2: { windowWidth: 302, windowHeight: 102, fontSize: { time: 42 } },
+  3: { windowWidth: 385, windowHeight: 115, fontSize: { time: 54 } },
+  4: { windowWidth: 468, windowHeight: 128, fontSize: { time: 66 } },
+  5: { windowWidth: 550, windowHeight: 140, fontSize: { time: 78 } },
+  // 6: { windowWidth: 2048, windowHeight: 512, fontSize: { time: 240 } }
 };
 
 // SettingsSize型をsizeMappingのキーから動的に生成

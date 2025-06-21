@@ -681,12 +681,12 @@ function App() {
                           ...getTextStyle(),
                           fontSize: `${currentSizeSettings.fontSize.date}px`
                         }}
-                        className="mb-2 select-none"
+                        className="mb-1 select-none"
                       >
                         {date}
                       </div>
                       <div 
-                        className="my-2" 
+                        className="my-1 mx-auto w-5/6" 
                         style={{ 
                           borderColor: settings.textColor, 
                           borderTopWidth: 1,
