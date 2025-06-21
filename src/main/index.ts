@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, screen } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { promises as fs } from 'fs'
 import { AppSettings, defaultSettings, sizeMappingDateTime, sizeMappingTime } from '../shared/types/settings'
@@ -464,11 +464,6 @@ async function createWindow(): Promise<void> {
 
   ipcMain.handle('debug-get-memory-alarm-settings', (): AlarmSettings | null => {
     return cachedAlarmSettings
-  })
-
-  // カーソルのスクリーン座標を取得
-  ipcMain.handle('get-cursor-screen-point', () => {
-    return screen.getCursorScreenPoint()
   })
 
   // アセットファイルのパスを取得
