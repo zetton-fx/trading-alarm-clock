@@ -44,8 +44,8 @@ export const defaultSettings: AppSettings = {
   glowIntensity: 2
 };
 
-// サイズに対応するウィンドウサイズとフォントサイズのマッピング
-export const sizeMapping = {
+// 日時表示用のサイズマッピング
+export const sizeMappingDateTime = {
   1: { windowWidth: 350, windowHeight: 200, fontSize: { date: 24, time: 36 } },
   2: { windowWidth: 400, windowHeight: 225, fontSize: { date: 28, time: 42 } },
   3: { windowWidth: 450, windowHeight: 250, fontSize: { date: 32, time: 48 } },
@@ -54,7 +54,17 @@ export const sizeMapping = {
   6: { windowWidth: 2048, windowHeight: 1024, fontSize: { date: 120, time: 180 } }
 };
 
+// 時刻のみ表示用のサイズマッピング
+export const sizeMappingTime = {
+  1: { windowWidth: 350, windowHeight: 100, fontSize: { time: 48 } },
+  2: { windowWidth: 400, windowHeight: 112, fontSize: { time: 56 } },
+  3: { windowWidth: 450, windowHeight: 125, fontSize: { time: 64 } },
+  4: { windowWidth: 500, windowHeight: 138, fontSize: { time: 72 } },
+  5: { windowWidth: 550, windowHeight: 150, fontSize: { time: 80 } },
+  6: { windowWidth: 2048, windowHeight: 512, fontSize: { time: 240 } }
+};
+
 // SettingsSize型をsizeMappingのキーから動的に生成
-export type SettingsSize = keyof typeof sizeMapping;
+export type SettingsSize = keyof typeof sizeMappingDateTime;
 
 export const fontStyles = ['DSEG7', 'DSEG14'] as const 

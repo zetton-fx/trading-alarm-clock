@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { promises as fs } from 'fs'
-import { AppSettings, defaultSettings, sizeMapping } from '../shared/types/settings'
+import { AppSettings, defaultSettings, sizeMappingDateTime, sizeMappingTime } from '../shared/types/settings'
 import { AlarmSettings, defaultAlarmSettings, AlarmItem } from '../shared/types/alarm'
 
 // 設定ファイルのパス
@@ -252,6 +252,7 @@ const applyWindowsTitleBarHiding = (window: BrowserWindow, delay: number = 0): v
 async function createWindow(): Promise<void> {
   // メモリにロードされた設定を取得
   const settings = getSettings()
+  const sizeMapping = settings.displayFormat === 'time' ? sizeMappingTime : sizeMappingDateTime
   const { windowWidth, windowHeight } = sizeMapping[settings.size]
 
   // メインウィンドウを作成
@@ -363,6 +364,7 @@ async function createWindow(): Promise<void> {
     
     // 現在のサイズを取得
     const currentSize = mainWindow.getSize()
+    const sizeMapping = settings.displayFormat === 'time' ? sizeMappingTime : sizeMappingDateTime
     const { windowWidth, windowHeight } = sizeMapping[settings.size]
     
     // ウィンドウサイズを変更する前に Windows で最大化状態なら解除
