@@ -615,7 +615,7 @@ function App() {
   const currentSizeSettings = sizeMapping[settings.size]
 
   const dragRef = useRef<HTMLDivElement>(null)
-  // useWindowDrag(dragRef)
+  useWindowDrag(dragRef)
 
   return (
     <>
