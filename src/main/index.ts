@@ -337,6 +337,22 @@ async function createWindow(): Promise<void> {
     createAlarmWindow()
   })
 
+  // ウィンドウ位置を動かすためのIPCハンドラ
+  ipcMain.on('set-window-position', (_, { x, y }: { x: number; y: number }) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setPosition(x, y)
+    }
+  })
+
+  // ウィンドウ位置を取得するためのIPCハンドラ
+  ipcMain.handle('get-window-position', (): { x: number; y: number } | null => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const [x, y] = mainWindow.getPosition()
+      return { x, y }
+    }
+    return null
+  })
+
   // 設定の保存・読み込み
   ipcMain.handle('load-settings', async (): Promise<AppSettings> => {
     return getSettings()

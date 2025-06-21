@@ -60,7 +60,12 @@ const api = {
   
   // デバッグ用関数
   debugGetMemorySettings: (): Promise<any> => ipcRenderer.invoke('debug-get-memory-settings'),
-  debugGetMemoryAlarmSettings: (): Promise<any> => ipcRenderer.invoke('debug-get-memory-alarm-settings')
+  debugGetMemoryAlarmSettings: (): Promise<any> => ipcRenderer.invoke('debug-get-memory-alarm-settings'),
+  
+  // ウィンドウ位置を非同期に取得する関数
+  getWindowPosition: (): Promise<{ x: number; y: number } | null> => ipcRenderer.invoke('get-window-position'),
+  // ウィンドウ位置を設定する関数
+  setWindowPosition: (position: { x: number; y: number }): void => ipcRenderer.send('set-window-position', position)
 }
 
 contextBridge.exposeInMainWorld('electronAPI', api) 

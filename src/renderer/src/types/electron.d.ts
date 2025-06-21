@@ -21,6 +21,8 @@ export interface ElectronAPI {
   onPreAlarmTriggered: (callback: (alarmData: any) => void) => () => void
   debugGetMemorySettings: () => Promise<any>
   debugGetMemoryAlarmSettings: () => Promise<any>
+  getWindowPosition: () => Promise<{ x: number; y: number } | null>
+  setWindowPosition: (position: { x: number; y: number }) => void
 }
 
 declare global {
@@ -45,6 +47,8 @@ declare global {
       onPreAlarmTriggered: (callback: (alarmData: any) => void) => () => void
       debugGetMemorySettings: () => Promise<any>
       debugGetMemoryAlarmSettings: () => Promise<any>
+      getWindowPosition: () => Promise<{ x: number; y: number } | null>
+      setWindowPosition: (position: { x: number; y: number }) => void
     }
   }
 } 
