@@ -563,20 +563,19 @@ function App() {
   }
 
   const getTextStyle = () => {
-    const glow = settings.glowIntensity > 0 
-      ? `0 0 ${settings.glowIntensity * 1}px ${settings.glowColor}, 
-         0 0 ${settings.glowIntensity * 2}px ${settings.glowColor}, 
-         0 0 ${settings.glowIntensity * 3}px ${settings.glowColor},
-         0 0 ${settings.glowIntensity * 5}px ${settings.glowColor}aa,
-         0 0 ${settings.glowIntensity * 8}px ${settings.glowColor}66,
+    // 発光強度0の場合はglow効果なし
+    const intensity = settings.glowIntensity * 0.5; // 発光強度を半分に調整
+    const glow = intensity > 0 
+      ? `0 0 ${intensity * 1}px ${settings.glowColor}, 
+         0 0 ${intensity * 2}px ${settings.glowColor}, 
+         0 0 ${intensity * 3}px ${settings.glowColor},
+         0 0 ${intensity * 5}px ${settings.glowColor}aa,
+         0 0 ${intensity * 8}px ${settings.glowColor}66,
          0 1px 0 ${settings.glowColor}cc,
          1px 0 0 ${settings.glowColor}cc,
          0 -1px 0 ${settings.glowColor}cc,
          -1px 0 0 ${settings.glowColor}cc`
-      : `0 1px 0 ${settings.glowColor}44,
-         1px 0 0 ${settings.glowColor}44,
-         0 -1px 0 ${settings.glowColor}44,
-         -1px 0 0 ${settings.glowColor}44`
+      : 'none'
     
     // フォントウェイトの変換
     const getFontWeight = () => {
@@ -604,13 +603,15 @@ function App() {
   })
 
   const getBoxStyle = () => {
-    const boxGlow = settings.glowIntensity > 0 
-      ? `0 0 ${settings.glowIntensity * 1}px ${settings.glowColor}, 
-         0 0 ${settings.glowIntensity * 2}px ${settings.glowColor}, 
-         0 0 ${settings.glowIntensity * 4}px ${settings.glowColor}aa,
-         0 0 ${settings.glowIntensity * 6}px ${settings.glowColor}66,
-         inset 0 0 ${settings.glowIntensity * 1}px ${settings.glowColor}33`
-      : `0 0 1px ${settings.glowColor}66`
+    // 発光強度0の場合はglow効果なし
+    const intensity = settings.glowIntensity * 0.5; // 発光強度を半分に調整
+    const boxGlow = intensity > 0 
+      ? `0 0 ${intensity * 1}px ${settings.glowColor}, 
+         0 0 ${intensity * 2}px ${settings.glowColor}, 
+         0 0 ${intensity * 4}px ${settings.glowColor}aa,
+         0 0 ${intensity * 6}px ${settings.glowColor}66,
+         inset 0 0 ${intensity * 1}px ${settings.glowColor}33`
+      : 'none'
 
     return {
       ...getBackgroundStyle(),
