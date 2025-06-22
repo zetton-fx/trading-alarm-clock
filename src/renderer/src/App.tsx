@@ -612,15 +612,11 @@ function App() {
          inset 0 0 ${settings.glowIntensity * 1}px ${settings.glowColor}33`
       : `0 0 1px ${settings.glowColor}66`
 
-    // 枠線の色と太さをbox-shadowのinsetで表現
-    const borderShadow = `inset 0 0 0 2px ${settings.textColor}`
-
     return {
       ...getBackgroundStyle(),
-      // 元のborderは使わない
-      // borderColor: settings.textColor,
-      // borderWidth: '2px',
-      boxShadow: `${boxGlow}, ${borderShadow}`
+      boxShadow: boxGlow, // 発光効果のbox-shadowのみ残す
+      outline: `2px solid ${settings.textColor}`, // outlineで枠線を描画
+      outlineOffset: '-2px', // 枠線を内側に2pxオフセット
     }
   }
 
