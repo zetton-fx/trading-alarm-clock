@@ -46,22 +46,80 @@ export const defaultSettings: AppSettings = {
 
 // 日時表示用のサイズマッピング
 export const sizeMappingDateTime = {
-  1: { windowWidth: 220, windowHeight: 120, fontSize: { date: 20, time: 30 } },
-  2: { windowWidth: 302, windowHeight: 153, fontSize: { date: 28, time: 42 } },
-  3: { windowWidth: 385, windowHeight: 172, fontSize: { date: 32, time: 54 } },
-  4: { windowWidth: 468, windowHeight: 192, fontSize: { date: 36, time: 66 } },
-  5: { windowWidth: 550, windowHeight: 210, fontSize: { date: 40, time: 78 } },
-  // 6: { windowWidth: 2048, windowHeight: 1024, fontSize: { date: 120, time: 180 } }
+  1: {
+    windowWidth: 220,
+    windowHeight: 120,
+    fontSize: { date: 20, time: 30 },
+    buttonSize: { main: 48, sub: 28 },
+    iconSize: { main: 24, sub: 16 }
+  },
+  2: {
+    windowWidth: 302,
+    windowHeight: 153,
+    fontSize: { date: 28, time: 42 },
+    buttonSize: { main: 56, sub: 32 },
+    iconSize: { main: 28, sub: 18 }
+  },
+  3: {
+    windowWidth: 385,
+    windowHeight: 172,
+    fontSize: { date: 32, time: 54 },
+    buttonSize: { main: 64, sub: 40 },
+    iconSize: { main: 32, sub: 24 }
+  },
+  4: {
+    windowWidth: 468,
+    windowHeight: 192,
+    fontSize: { date: 36, time: 66 },
+    buttonSize: { main: 72, sub: 44 },
+    iconSize: { main: 36, sub: 26 }
+  },
+  5: {
+    windowWidth: 550,
+    windowHeight: 210,
+    fontSize: { date: 40, time: 78 },
+    buttonSize: { main: 80, sub: 48 },
+    iconSize: { main: 40, sub: 28 }
+  }
 };
 
 // 時刻のみ表示用のサイズマッピング
 export const sizeMappingTime = {
-  1: { windowWidth: 220, windowHeight: 80, fontSize: { time: 30 } },
-  2: { windowWidth: 302, windowHeight: 102, fontSize: { time: 42 } },
-  3: { windowWidth: 385, windowHeight: 115, fontSize: { time: 54 } },
-  4: { windowWidth: 468, windowHeight: 128, fontSize: { time: 66 } },
-  5: { windowWidth: 550, windowHeight: 140, fontSize: { time: 78 } },
-  // 6: { windowWidth: 2048, windowHeight: 512, fontSize: { time: 240 } }
+  1: {
+    windowWidth: 220,
+    windowHeight: 80,
+    fontSize: { time: 30 },
+    buttonSize: { main: 48, sub: 28 },
+    iconSize: { main: 24, sub: 16 }
+  },
+  2: {
+    windowWidth: 302,
+    windowHeight: 102,
+    fontSize: { time: 42 },
+    buttonSize: { main: 56, sub: 32 },
+    iconSize: { main: 28, sub: 18 }
+  },
+  3: {
+    windowWidth: 385,
+    windowHeight: 115,
+    fontSize: { time: 54 },
+    buttonSize: { main: 64, sub: 40 },
+    iconSize: { main: 32, sub: 24 }
+  },
+  4: {
+    windowWidth: 468,
+    windowHeight: 128,
+    fontSize: { time: 66 },
+    buttonSize: { main: 72, sub: 44 },
+    iconSize: { main: 36, sub: 26 }
+  },
+  5: {
+    windowWidth: 550,
+    windowHeight: 140,
+    fontSize: { time: 78 },
+    buttonSize: { main: 80, sub: 48 },
+    iconSize: { main: 40, sub: 28 }
+  }
 };
 
 // SettingsSize型をsizeMappingのキーから動的に生成
