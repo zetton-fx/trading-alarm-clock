@@ -39,6 +39,7 @@ function App() {
     timestamp: number
   } | null>(null)
   const [alarmTimeoutId, setAlarmTimeoutId] = useState<NodeJS.Timeout | null>(null)
+  const [isInitialDisplay, setIsInitialDisplay] = useState(true);
   
   const { settings, openSettings, loadSettings, isSettingsOpen } = useSettingsStore()
   const { settings: alarmSettings, loadAlarmSettings, setSettings: setAlarmSettings } = useAlarmStore()
@@ -289,6 +290,14 @@ function App() {
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [alarmNotification, alarmTimeoutId])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialDisplay(false);
+    }, 1000); // 1秒後に非表示に
+
+    return () => clearTimeout(timer);
+  }, []); // 空の依存配列で、コンポーネントマウント時に一度だけ実行
 
   // 初期設定の読み込み
   useEffect(() => {
@@ -628,7 +637,7 @@ function App() {
           {/* 時計本体 */}
           <div className="relative text-center w-full h-full">
             {/* ボタン：hover時に表示 - 時計の右上に配置（ウィンドウサイズが動的に調整される） */}
-            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 no-drag z-30">
+            <div className={`absolute top-2 right-2 flex gap-2 transition-opacity duration-500 no-drag z-30 ${isInitialDisplay ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
               {/* 設定ボタン */}
               <button
                 onClick={handleSettings}
@@ -677,7 +686,7 @@ function App() {
             </div>
 
             {/* アラーム追加ボタン：hover時に表示 - 時計の中央下に配置 */}
-            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 no-drag z-30">
+            <div className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 transition-opacity duration-500 no-drag z-30 ${isInitialDisplay ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
               <button
                 onClick={handleAddAlarm}
                 className="flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-lg transition-colors duration-200"
