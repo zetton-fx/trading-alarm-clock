@@ -615,7 +615,7 @@ function App() {
 
     return {
         backgroundColor: settings.textColor, // 枠線の色
-        padding: '2px', // これが枠線の太さになる
+        padding: '3px', // これが枠線の太さになる
         boxShadow: boxGlow, // 発光効果
     }
   }
