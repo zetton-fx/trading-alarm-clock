@@ -753,31 +753,33 @@ function App() {
               <div 
                 className="relative rounded-xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-700"
                 style={{
-                  width: Math.min(currentSizeSettings.windowWidth * 0.5, 180),
-                  padding: Math.max(currentSizeSettings.windowWidth * 0.04, 20),
+                  width: `${currentSizeSettings.popup.width}px`,
+                  padding: `${currentSizeSettings.popup.padding}px`,
                   backdropFilter: 'blur(20px)',
                   backgroundColor: 'rgba(255, 255, 255, 0.95)'
                 }}
               >
                 
-                {/* アラーム名と時刻 */}
-                <div className="text-center">
-                  <p className="text-gray-600 dark:text-gray-400 font-medium mb-3"
-                     style={{ 
-                       fontSize: Math.min(currentSizeSettings.windowWidth * 0.032, 13),
-                       lineHeight: '1.2'
-                     }}
-                  >
-                    {alarmNotification.name}
-                  </p>
-                  
-                  <p className="font-mono font-light text-gray-900 dark:text-gray-100 mb-4"
-                     style={{ fontSize: Math.min(currentSizeSettings.windowWidth * 0.08, 32) }}
-                  >
-                    {String(alarmNotification.hour).padStart(2, '0')}:
-                    {String(alarmNotification.minute).padStart(2, '0')}
-                  </p>
-                </div>
+                {/* isCompactPopupがtrueでない場合のみ、アラーム名と時刻を表示 */}
+                {!(currentSizeSettings as any).isCompactPopup && (
+                  <div className="text-center">
+                    <p className="text-gray-600 dark:text-gray-400 font-medium mb-3"
+                       style={{ 
+                         fontSize: `${currentSizeSettings.popup.nameSize}px`,
+                         lineHeight: '1.2'
+                       }}
+                    >
+                      {alarmNotification.name}
+                    </p>
+                    
+                    <p className="font-mono font-light text-gray-900 dark:text-gray-100 mb-4"
+                       style={{ fontSize: `${currentSizeSettings.popup.timeSize}px` }}
+                    >
+                      {String(alarmNotification.hour).padStart(2, '0')}:
+                      {String(alarmNotification.minute).padStart(2, '0')}
+                    </p>
+                  </div>
+                )}
                 
                 {/* シンプルなボタン */}
                 <button
@@ -791,8 +793,8 @@ function App() {
                   }}
                   className="w-full rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium transition-all duration-200 hover:bg-gray-800 dark:hover:bg-gray-100 active:scale-95"
                   style={{ 
-                    padding: `${Math.max(currentSizeSettings.windowHeight * 0.02, 10)}px`,
-                    fontSize: Math.min(currentSizeSettings.windowWidth * 0.04, 16)
+                    padding: `${currentSizeSettings.popup.buttonPadding}px`,
+                    fontSize: `${currentSizeSettings.popup.buttonFontSize}px`
                   }}
                 >
                   OK

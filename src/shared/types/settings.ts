@@ -51,35 +51,40 @@ export const sizeMappingDateTime = {
     windowHeight: 120,
     fontSize: { date: 20, time: 30 },
     buttonSize: { main: 48, sub: 28 },
-    iconSize: { main: 24, sub: 16 }
+    iconSize: { main: 24, sub: 16 },
+    popup: { width: 120, padding: 16, nameSize: 12, timeSize: 20, buttonPadding: 8, buttonFontSize: 13 }
   },
   2: {
     windowWidth: 302,
     windowHeight: 153,
     fontSize: { date: 28, time: 42 },
     buttonSize: { main: 56, sub: 32 },
-    iconSize: { main: 28, sub: 18 }
+    iconSize: { main: 28, sub: 18 },
+    popup: { width: 160, padding: 16, nameSize: 13, timeSize: 28, buttonPadding: 8, buttonFontSize: 14 }
   },
   3: {
     windowWidth: 385,
     windowHeight: 172,
     fontSize: { date: 32, time: 54 },
     buttonSize: { main: 64, sub: 40 },
-    iconSize: { main: 32, sub: 24 }
+    iconSize: { main: 32, sub: 24 },
+    popup: { width: 200, padding: 20, nameSize: 14, timeSize: 32, buttonPadding: 10, buttonFontSize: 14 }
   },
   4: {
     windowWidth: 468,
     windowHeight: 192,
     fontSize: { date: 36, time: 66 },
     buttonSize: { main: 72, sub: 44 },
-    iconSize: { main: 36, sub: 26 }
+    iconSize: { main: 36, sub: 26 },
+    popup: { width: 240, padding: 20, nameSize: 15, timeSize: 36, buttonPadding: 10, buttonFontSize: 15 }
   },
   5: {
     windowWidth: 550,
     windowHeight: 210,
     fontSize: { date: 40, time: 78 },
     buttonSize: { main: 80, sub: 48 },
-    iconSize: { main: 40, sub: 28 }
+    iconSize: { main: 40, sub: 28 },
+    popup: { width: 280, padding: 20, nameSize: 16, timeSize: 40, buttonPadding: 10, buttonFontSize: 16 }
   }
 };
 
@@ -90,35 +95,42 @@ export const sizeMappingTime = {
     windowHeight: 80,
     fontSize: { time: 30 },
     buttonSize: { main: 48, sub: 28 },
-    iconSize: { main: 24, sub: 16 }
+    iconSize: { main: 24, sub: 16 },
+    popup: { width: 100, padding: 12, nameSize: 13, timeSize: 28, buttonPadding: 8, buttonFontSize: 13 },
+    isCompactPopup: true
   },
   2: {
     windowWidth: 302,
     windowHeight: 102,
     fontSize: { time: 42 },
     buttonSize: { main: 56, sub: 32 },
-    iconSize: { main: 28, sub: 18 }
+    iconSize: { main: 28, sub: 18 },
+    popup: { width: 140, padding: 14, nameSize: 18, timeSize: 42, buttonPadding: 8, buttonFontSize: 14 },
+    isCompactPopup: true
   },
   3: {
     windowWidth: 385,
     windowHeight: 115,
     fontSize: { time: 54 },
     buttonSize: { main: 64, sub: 40 },
-    iconSize: { main: 32, sub: 24 }
+    iconSize: { main: 32, sub: 24 },
+    popup: { width: 200, padding: 16, nameSize: 20, timeSize: 54, buttonPadding: 8, buttonFontSize: 14 }
   },
   4: {
     windowWidth: 468,
     windowHeight: 128,
     fontSize: { time: 66 },
     buttonSize: { main: 72, sub: 44 },
-    iconSize: { main: 36, sub: 26 }
+    iconSize: { main: 36, sub: 26 },
+    popup: { width: 240, padding: 16, nameSize: 22, timeSize: 66, buttonPadding: 8, buttonFontSize: 14 }
   },
   5: {
     windowWidth: 550,
     windowHeight: 140,
     fontSize: { time: 78 },
     buttonSize: { main: 80, sub: 48 },
-    iconSize: { main: 40, sub: 28 }
+    iconSize: { main: 40, sub: 28 },
+    popup: { width: 280, padding: 16, nameSize: 24, timeSize: 78, buttonPadding: 8, buttonFontSize: 14 }
   }
 };
 
