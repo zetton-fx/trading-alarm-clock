@@ -605,19 +605,18 @@ function App() {
   const getBoxStyle = () => {
     // 発光強度0の場合はglow効果なし
     const intensity = settings.glowIntensity * 0.5; // 発光強度を半分に調整
-    const boxGlow = intensity > 0 
-      ? `0 0 ${intensity * 1}px ${settings.glowColor}, 
-         0 0 ${intensity * 2}px ${settings.glowColor}, 
-         0 0 ${intensity * 4}px ${settings.glowColor}aa,
-         0 0 ${intensity * 6}px ${settings.glowColor}66,
-         inset 0 0 ${intensity * 1}px ${settings.glowColor}33`
-      : 'none'
+    const boxGlow = intensity > 0
+        ? `0 0 ${intensity * 1}px ${settings.glowColor}, 
+     0 0 ${intensity * 2}px ${settings.glowColor}, 
+     0 0 ${intensity * 4}px ${settings.glowColor}aa,
+     0 0 ${intensity * 6}px ${settings.glowColor}66,
+     inset 0 0 ${intensity * 1}px ${settings.glowColor}33`
+        : 'none'
 
     return {
-      ...getBackgroundStyle(),
-      boxShadow: boxGlow, // 発光効果のbox-shadowのみ残す
-      outline: `2px solid ${settings.textColor}`, // outlineで枠線を描画
-      outlineOffset: '-2px', // 枠線を内側に2pxオフセット
+        backgroundColor: settings.textColor, // 枠線の色
+        padding: '2px', // これが枠線の太さになる
+        boxShadow: boxGlow, // 発光効果
     }
   }
 
@@ -707,49 +706,50 @@ function App() {
               </button>
             </div>
 
-            <div 
-              className={`w-full h-full flex flex-col items-center justify-center rounded-lg shadow-lg ${getFontClass()}`}
+            <div
+              className="w-full h-full rounded-lg shadow-lg"
               style={getBoxStyle()}
             >
-
-              
-              {settings.displayFormat === 'datetime' && date && (
-                (() => {
-                  const sizeMapping = sizeMappingDateTime;
-                  const currentSizeSettings = sizeMapping[settings.size];
-                  return (
-                    <>
-                      <div 
-                        style={{
-                          ...getTextStyle(),
-                          fontSize: `${currentSizeSettings.fontSize.date}px`
-                        }}
-                        className={`${settings.size === 1 ? '' : 'mb-1'} select-none`}
-                      >
-                        {date}
-                      </div>
-                      <div 
-                        className={`${settings.size === 1 ? 'mt-0 mb-1' : 'my-1'} mx-auto w-5/6`} 
-                        style={{ 
-                          borderColor: settings.textColor, 
-                          borderTopWidth: 1,
-                          boxShadow: settings.glowIntensity > 0 
-                            ? `0 0 ${settings.glowIntensity * 1}px ${settings.glowColor}, 0 0 ${settings.glowIntensity * 3}px ${settings.glowColor}aa` 
-                            : `0 0 1px ${settings.glowColor}44`
-                        }} 
-                      />
-                    </>
-                  )
-                })()
-              )}
-              <div 
-                style={{
-                  ...getTextStyle(),
-                  fontSize: `${currentSizeSettings.fontSize.time}px`
-                }}
-                className="select-none"
+              <div
+                className={`w-full h-full flex flex-col items-center justify-center rounded-lg ${getFontClass()}`}
+                style={{ ...getBackgroundStyle(), ...getTextStyle() }}
               >
-                {time}
+                {settings.displayFormat === 'datetime' && date && (
+                  (() => {
+                    const sizeMapping = sizeMappingDateTime;
+                    const currentSizeSettings = sizeMapping[settings.size];
+                    return (
+                      <>
+                        <div
+                          style={{
+                            fontSize: `${currentSizeSettings.fontSize.date}px`
+                          }}
+                          className={`${settings.size === 1 ? '' : 'mb-1'} select-none`}
+                        >
+                          {date}
+                        </div>
+                        <div
+                          className={`${settings.size === 1 ? 'mt-0 mb-1' : 'my-1'} mx-auto w-5/6`}
+                          style={{
+                            borderColor: settings.textColor,
+                            borderTopWidth: 1,
+                            boxShadow: settings.glowIntensity > 0
+                              ? `0 0 ${settings.glowIntensity * 1}px ${settings.glowColor}, 0 0 ${settings.glowIntensity * 3}px ${settings.glowColor}aa`
+                              : `0 0 1px ${settings.glowColor}44`
+                          }}
+                        />
+                      </>
+                    )
+                  })()
+                )}
+                <div
+                  style={{
+                    fontSize: `${currentSizeSettings.fontSize.time}px`
+                  }}
+                  className="select-none"
+                >
+                  {time}
+                </div>
               </div>
             </div>
           </div>
