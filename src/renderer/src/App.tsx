@@ -3,7 +3,7 @@ import { useSettingsStore } from './store/settingsStore'
 import { useAlarmStore } from './store/alarmStore'
 import SettingsWindow from './components/SettingsWindow'
 import AlarmWindow from './components/AlarmWindow'
-import { sizeMapping } from '../../shared/types/settings'
+import { sizeMappingDateTime, sizeMappingTime } from '../../shared/types/settings'
 
 // -------------------------------------------------------
 // グローバルに 1 本だけ保持する Audio インスタンス
@@ -610,26 +610,20 @@ function App() {
     }
   }
 
+  const sizeMapping = settings.displayFormat === 'time' ? sizeMappingTime : sizeMappingDateTime
   const currentSizeSettings = sizeMapping[settings.size]
 
   return (
     <>
-      <div className="relative w-full h-full" style={{ backgroundColor: 'transparent' }}>
-        {/* ドラッグ可能なアプリ左側の範囲（時計に被る幅） */}
-        <div
-          className="absolute top-0 left-0 w-[40%] h-full drag-region cursor-move hover:bg-blue-300 bg-opacity-50 z-20"
-        />
-
+      <div className="relative w-full h-full draggable" style={{ backgroundColor: 'transparent' }}>
         {/* 時計＋ボタン部分 */}
-        <div 
+        <div
           className="relative z-10 flex items-center justify-center h-full group"
-          onMouseEnter={() => window.electronAPI?.expandWindowForButtons()}
-          onMouseLeave={() => window.electronAPI?.restoreWindowSize()}
         >
           {/* 時計本体 */}
-          <div className="relative text-center">
+          <div className="relative text-center w-full h-full">
             {/* ボタン：hover時に表示 - 時計の右上に配置（ウィンドウサイズが動的に調整される） */}
-            <div className="absolute -top-2 -right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 no-drag z-30">
+            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 no-drag z-30">
               {/* 設定ボタン */}
               <button
                 onClick={handleSettings}
@@ -658,7 +652,7 @@ function App() {
             </div>
 
             {/* アラーム追加ボタン：hover時に表示 - 時計の中央下に配置 */}
-            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 no-drag z-30">
+            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 no-drag z-30">
               <button
                 onClick={handleAddAlarm}
                 className="w-16 h-16 flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-lg transition-colors duration-200"
@@ -671,33 +665,39 @@ function App() {
             </div>
 
             <div 
-              className={`px-8 py-4 rounded-lg border-2 shadow-lg ${getFontClass()}`}
+              className={`w-full h-full flex flex-col items-center justify-center rounded-lg border-2 shadow-lg ${getFontClass()}`}
               style={getBoxStyle()}
             >
 
               
-              {date && (
-                <>
-                  <div 
-                    style={{
-                      ...getTextStyle(),
-                      fontSize: `${currentSizeSettings.fontSize.date}px`
-                    }}
-                    className="mb-2 select-none"
-                  >
-                    {date}
-                  </div>
-                  <div 
-                    className="my-2" 
-                    style={{ 
-                      borderColor: settings.textColor, 
-                      borderTopWidth: 1,
-                      boxShadow: settings.glowIntensity > 0 
-                        ? `0 0 ${settings.glowIntensity * 1}px ${settings.glowColor}, 0 0 ${settings.glowIntensity * 3}px ${settings.glowColor}aa` 
-                        : `0 0 1px ${settings.glowColor}44`
-                    }} 
-                  />
-                </>
+              {settings.displayFormat === 'datetime' && date && (
+                (() => {
+                  const sizeMapping = sizeMappingDateTime;
+                  const currentSizeSettings = sizeMapping[settings.size];
+                  return (
+                    <>
+                      <div 
+                        style={{
+                          ...getTextStyle(),
+                          fontSize: `${currentSizeSettings.fontSize.date}px`
+                        }}
+                        className="mb-1 select-none"
+                      >
+                        {date}
+                      </div>
+                      <div 
+                        className="my-1 mx-auto w-5/6" 
+                        style={{ 
+                          borderColor: settings.textColor, 
+                          borderTopWidth: 1,
+                          boxShadow: settings.glowIntensity > 0 
+                            ? `0 0 ${settings.glowIntensity * 1}px ${settings.glowColor}, 0 0 ${settings.glowIntensity * 3}px ${settings.glowColor}aa` 
+                            : `0 0 1px ${settings.glowColor}44`
+                        }} 
+                      />
+                    </>
+                  )
+                })()
               )}
               <div 
                 style={{
@@ -714,7 +714,7 @@ function App() {
 
         {/* シンプルなアラーム通知 */}
         {alarmNotification && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 no-drag">
             <div className="relative w-full h-full flex items-center justify-center">
               
               {/* ミニマルなアラーム通知 */}
@@ -775,4 +775,4 @@ function App() {
   )
 }
 
-export default App
+export default App 

@@ -12,15 +12,16 @@ export interface ElectronAPI {
   saveAlarmSettings: (settings: AlarmSettings) => Promise<void>
   onAlarmSettingsUpdated: (callback: (settings: AlarmSettings) => void) => void
   removeAlarmSettingsUpdatedListener: () => void
-  onSettingsUpdated: (callback: (settings: AppSettings) => void) => void
+  onSettingsUpdated: (callback: (settings: AppSettings) => void) => () => void
   removeSettingsUpdatedListener: () => void
   expandWindowForButtons: () => void
   restoreWindowSize: () => void
   getAssetPath: (assetPath: string) => Promise<string>
-  onAlarmTriggered: (callback: (alarmData: any) => void) => void
-  onPreAlarmTriggered: (callback: (alarmData: any) => void) => void
+  onAlarmTriggered: (callback: (alarmData: any) => void) => () => void
+  onPreAlarmTriggered: (callback: (alarmData: any) => void) => () => void
   debugGetMemorySettings: () => Promise<any>
   debugGetMemoryAlarmSettings: () => Promise<any>
+  deleteAllSettings: () => Promise<void>
 }
 
 declare global {
@@ -36,15 +37,16 @@ declare global {
       saveAlarmSettings: (settings: AlarmSettings) => Promise<void>
       onAlarmSettingsUpdated: (callback: (settings: AlarmSettings) => void) => void
       removeAlarmSettingsUpdatedListener: () => void
-      onSettingsUpdated: (callback: (settings: AppSettings) => void) => void
+      onSettingsUpdated: (callback: (settings: AppSettings) => void) => () => void
       removeSettingsUpdatedListener: () => void
       expandWindowForButtons: () => void
       restoreWindowSize: () => void
       getAssetPath: (assetPath: string) => Promise<string>
-      onAlarmTriggered: (callback: (alarmData: any) => void) => void
-      onPreAlarmTriggered: (callback: (alarmData: any) => void) => void
+      onAlarmTriggered: (callback: (alarmData: any) => void) => () => void
+      onPreAlarmTriggered: (callback: (alarmData: any) => void) => () => void
       debugGetMemorySettings: () => Promise<any>
       debugGetMemoryAlarmSettings: () => Promise<any>
+      deleteAllSettings: () => Promise<void>
     }
   }
 } 
