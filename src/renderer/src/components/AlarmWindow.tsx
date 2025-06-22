@@ -26,6 +26,7 @@ function AlarmWindow() {
   const [bulkImportText, setBulkImportText] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isAlarmSettingsExpanded, setIsAlarmSettingsExpanded] = useState(false)
+  const [deletingAlarmId, setDeletingAlarmId] = useState<string | null>(null)
 
   useEffect(() => {
     loadAlarmSettings()
@@ -169,6 +170,14 @@ function AlarmWindow() {
     setNewAlarmMinute(0)
     // その場編集なのでフォームは閉じない
     // setShowAddForm(false)
+  }
+
+  const handleDeleteAlarm = (id: string) => {
+    setDeletingAlarmId(id)
+    setTimeout(() => {
+      deleteAlarm(id)
+      setDeletingAlarmId(null)
+    }, 300) // アニメーションの時間
   }
 
   const handleDeleteAllAlarms = () => {
@@ -375,10 +384,14 @@ function AlarmWindow() {
                 sortedAlarms.map((alarm) => (
                   <div
                     key={alarm.id}
-                    className={`flex items-center gap-4 p-4 border rounded-md transition-colors ${
+                    className={`flex items-center gap-4 p-4 border rounded-md transition-all duration-300 ease-in-out transform-origin-top ${
                       editingAlarmId === alarm.id 
                         ? 'border-blue-300 bg-blue-50' 
                         : 'border-gray-200 hover:bg-gray-50'
+                    } ${
+                      deletingAlarmId === alarm.id 
+                        ? 'opacity-0 scale-y-0 -mb-16'
+                        : 'scale-y-100'
                     }`}
                   >
                     {editingAlarmId === alarm.id ? (
@@ -471,7 +484,7 @@ function AlarmWindow() {
                           </label>
                         </div>
                         <button
-                          onClick={() => deleteAlarm(alarm.id)}
+                          onClick={() => handleDeleteAlarm(alarm.id)}
                           className="p-2 text-red-500 hover:bg-red-50 rounded-md transition-colors"
                           title="削除"
                         >
