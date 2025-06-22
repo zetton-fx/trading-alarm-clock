@@ -602,11 +602,16 @@ function App() {
          0 0 ${settings.glowIntensity * 6}px ${settings.glowColor}66,
          inset 0 0 ${settings.glowIntensity * 1}px ${settings.glowColor}33`
       : `0 0 1px ${settings.glowColor}66`
+
+    // 枠線の色と太さをbox-shadowのinsetで表現
+    const borderShadow = `inset 0 0 0 2px ${settings.textColor}`
+
     return {
       ...getBackgroundStyle(),
-      borderColor: settings.textColor,
-      borderWidth: '2px',
-      boxShadow: boxGlow
+      // 元のborderは使わない
+      // borderColor: settings.textColor,
+      // borderWidth: '2px',
+      boxShadow: `${boxGlow}, ${borderShadow}`
     }
   }
 
@@ -697,7 +702,7 @@ function App() {
             </div>
 
             <div 
-              className={`w-full h-full flex flex-col items-center justify-center rounded-lg border-2 shadow-lg ${getFontClass()}`}
+              className={`w-full h-full flex flex-col items-center justify-center rounded-lg shadow-lg ${getFontClass()}`}
               style={getBoxStyle()}
             >
 
