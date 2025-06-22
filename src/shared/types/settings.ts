@@ -35,13 +35,13 @@ export const defaultSettings: AppSettings = {
   size: 3,
   alwaysOnTop: true,
   displayFormat: 'datetime',
-  font: 'DSEG7Classic',
+  font: 'DSEG7Modern',
   fontWeight: 'regular',
   fontStyle: 'normal',
-  textColor: '#ffffff', // 白色
-  backgroundColor: '#000000', // 黒色
-  glowColor: '#a1b6e8', // 水色
-  glowIntensity: 2
+  textColor: '#000000', // 黒色
+  backgroundColor: '#ffffff', // 白色
+  glowColor: '#ffffff', // 白色
+  glowIntensity: 0
 };
 
 // 線形補間ヘルパー関数
