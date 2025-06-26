@@ -595,6 +595,8 @@ function createSettingsWindow(): void {
     show: false,
     autoHideMenuBar: true,
     resizable: true,
+    parent: mainWindow,
+    modal: false,
     title: '設定',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -606,6 +608,8 @@ function createSettingsWindow(): void {
 
   settingsWindow.on('ready-to-show', () => {
     settingsWindow?.show()
+    // 時計のあるウィンドウの中央に配置
+    settingsWindow?.center()
   })
 
   settingsWindow.on('closed', () => {
@@ -647,6 +651,8 @@ function createAlarmWindow(): void {
 
   alarmWindow.on('ready-to-show', () => {
     alarmWindow?.show()
+    // 時計のあるウィンドウの中央に配置
+    alarmWindow?.center()
   })
 
   alarmWindow.on('closed', () => {
