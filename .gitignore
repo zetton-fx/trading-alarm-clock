@@ -1,0 +1,27 @@
+# Node modules
+node_modules/
+
+# Build outputs
+/dist/
+/out/
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# VSCode settings
+.vscode/
+
+# npm logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# dotenv
+.env
+.env.local
+
+# Electron builder cache
+/build/

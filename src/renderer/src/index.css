@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/* カスタムスタイル */
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* スクロールバーを非表示 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+/* Windows用タイトルバー完全非表示 */
+html {
+  --titlebar-height: 0px;
+}
+
+body {
+  padding-top: var(--titlebar-height, 0px);
+}
+
+/* Windows特有のタイトルバー非表示 */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Electronのタイトルバー関連要素を非表示 */
+.titlebar,
+.window-controls-overlay,
+[data-titlebar] {
+  display: none !important;
+  height: 0 !important;
+  visibility: hidden !important;
+}
+
+#root {
+  height: 100vh;
+}
+
+/* デジタル時計用のフォント */
+.digital-font {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+} 
+
+/* ドラッグできない要素 (ボタンなど) */
+.no-drag {
+  -webkit-app-region: no-drag;
+  cursor: default;
+}
+
+/* ドラッグ可能な要素 */
+.draggable {
+  -webkit-app-region: drag;
+}
+
+/* アプリケーション全体でテキスト選択を無効化 */
+* {
+  user-select: none;
+}
