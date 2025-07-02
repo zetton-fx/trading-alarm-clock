@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join } from 'path'
 import { promises as fs } from 'fs'
 import { AppSettings, defaultSettings, sizeMappingDateTime, sizeMappingTime } from '../shared/types/settings'
@@ -379,6 +379,43 @@ async function createWindow(): Promise<void> {
     createAlarmWindow()
   })
 
+  // TextArea用のコンテキストメニューを表示するIPCハンドラ
+  ipcMain.on('show-context-menu', (event) => {
+    const template = [
+      {
+        label: '元に戻す',
+        role: 'undo' as const
+      },
+      {
+        label: 'やり直し',
+        role: 'redo' as const
+      },
+      { type: 'separator' as const },
+      {
+        label: '切り取り',
+        role: 'cut' as const
+      },
+      {
+        label: 'コピー',
+        role: 'copy' as const
+      },
+      {
+        label: '貼り付け',
+        role: 'paste' as const
+      },
+      { type: 'separator' as const },
+      {
+        label: 'すべて選択',
+        role: 'selectAll' as const
+      }
+    ]
+    const menu = Menu.buildFromTemplate(template)
+    const window = BrowserWindow.fromWebContents(event.sender)
+    if (window) {
+      menu.popup({ window })
+    }
+  })
+
   // 手動で全設定を削除してアプリを再起動するコマンド
   ipcMain.handle('delete-all-settings', async () => {
     console.log('レンダラーからの要求により、すべての設定ファイルを削除します。')
@@ -558,6 +595,8 @@ function createSettingsWindow(): void {
     show: false,
     autoHideMenuBar: true,
     resizable: true,
+    parent: mainWindow,
+    modal: false,
     title: '設定',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -569,6 +608,8 @@ function createSettingsWindow(): void {
 
   settingsWindow.on('ready-to-show', () => {
     settingsWindow?.show()
+    // 時計のあるウィンドウの中央に配置
+    settingsWindow?.center()
   })
 
   settingsWindow.on('closed', () => {
@@ -610,6 +651,8 @@ function createAlarmWindow(): void {
 
   alarmWindow.on('ready-to-show', () => {
     alarmWindow?.show()
+    // 時計のあるウィンドウの中央に配置
+    alarmWindow?.center()
   })
 
   alarmWindow.on('closed', () => {

@@ -63,7 +63,10 @@ const api = {
   debugGetMemoryAlarmSettings: (): Promise<any> => ipcRenderer.invoke('debug-get-memory-alarm-settings'),
   
   // 設定リセット
-  deleteAllSettings: (): Promise<void> => ipcRenderer.invoke('delete-all-settings')
+  deleteAllSettings: (): Promise<void> => ipcRenderer.invoke('delete-all-settings'),
+
+  // コンテキストメニュー表示
+  showContextMenu: (): void => ipcRenderer.send('show-context-menu')
 }
 
 contextBridge.exposeInMainWorld('electronAPI', api) 

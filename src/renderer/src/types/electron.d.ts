@@ -22,6 +22,7 @@ export interface ElectronAPI {
   debugGetMemorySettings: () => Promise<any>
   debugGetMemoryAlarmSettings: () => Promise<any>
   deleteAllSettings: () => Promise<void>
+  showContextMenu: () => void
 }
 
 declare global {
@@ -47,6 +48,7 @@ declare global {
       debugGetMemorySettings: () => Promise<any>
       debugGetMemoryAlarmSettings: () => Promise<any>
       deleteAllSettings: () => Promise<void>
+      showContextMenu: () => void
     }
   }
 } 

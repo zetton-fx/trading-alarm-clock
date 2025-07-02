@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AppSettings, defaultSettings } from '../../../shared/types/settings';
+import { AppSettings, defaultSettings, sizeMappingDateTime, sizeMappingTime } from '../../../shared/types/settings';
 import { useSettingsStore } from '../store/settingsStore';
 
 const SettingsWindow: React.FC = () => {
@@ -48,6 +48,10 @@ const SettingsWindow: React.FC = () => {
   const handleClose = () => {
     window.close();
   };
+
+  // 表示形式に基づいて適切なサイズマッピングを選択
+  const currentSizeMapping =
+    settings.displayFormat === 'datetime' ? sizeMappingDateTime : sizeMappingTime;
 
   return (
     <div style={{ 
@@ -109,7 +113,7 @@ const SettingsWindow: React.FC = () => {
                 value={settings.size}
                 onChange={(e) => setSettings(prev => ({ 
                   ...prev, 
-                  size: Number(e.target.value) as 1 | 2 | 3 | 4 | 5 | 6 
+                  size: Number(e.target.value) as 1 | 2 | 3 | 4 | 5 
                 }))}
                 style={{
                   width: '100%',
@@ -119,12 +123,21 @@ const SettingsWindow: React.FC = () => {
                   fontSize: '14px'
                 }}
               >
-                <option value={1}>最小 (350x200)</option>
-                <option value={2}>小 (400x225)</option>
-                <option value={3}>中 (450x250)</option>
-                <option value={4}>大 (500x275)</option>
-                <option value={5}>最大 (550x300)</option>
-                <option value={6}>デバッグ用 (2048x1024)</option>
+                {Object.keys(currentSizeMapping).map((sizeKey) => {
+                  const sizeValue = Number(sizeKey) as keyof typeof currentSizeMapping
+                  let label = `サイズ ${sizeValue}`
+                  if (sizeValue === 1) {
+                    label += ' (最小)'
+                  }
+                  if (sizeValue === 5) {
+                    label += ' (最大)'
+                  }
+                  return (
+                    <option key={sizeValue} value={sizeValue}>
+                      {label}
+                    </option>
+                  )
+                })}
               </select>
             </div>
 

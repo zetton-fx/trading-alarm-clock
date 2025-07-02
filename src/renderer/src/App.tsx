@@ -39,6 +39,7 @@ function App() {
     timestamp: number
   } | null>(null)
   const [alarmTimeoutId, setAlarmTimeoutId] = useState<NodeJS.Timeout | null>(null)
+  const [isInitialDisplay, setIsInitialDisplay] = useState(true);
   
   const { settings, openSettings, loadSettings, isSettingsOpen } = useSettingsStore()
   const { settings: alarmSettings, loadAlarmSettings, setSettings: setAlarmSettings } = useAlarmStore()
@@ -289,6 +290,14 @@ function App() {
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [alarmNotification, alarmTimeoutId])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialDisplay(false);
+    }, 1000); // 1秒後に非表示に
+
+    return () => clearTimeout(timer);
+  }, []); // 空の依存配列で、コンポーネントマウント時に一度だけ実行
 
   // 初期設定の読み込み
   useEffect(() => {
@@ -554,20 +563,19 @@ function App() {
   }
 
   const getTextStyle = () => {
-    const glow = settings.glowIntensity > 0 
-      ? `0 0 ${settings.glowIntensity * 1}px ${settings.glowColor}, 
-         0 0 ${settings.glowIntensity * 2}px ${settings.glowColor}, 
-         0 0 ${settings.glowIntensity * 3}px ${settings.glowColor},
-         0 0 ${settings.glowIntensity * 5}px ${settings.glowColor}aa,
-         0 0 ${settings.glowIntensity * 8}px ${settings.glowColor}66,
+    // 発光強度0の場合はglow効果なし
+    const intensity = settings.glowIntensity * 0.5; // 発光強度を半分に調整
+    const glow = intensity > 0 
+      ? `0 0 ${intensity * 1}px ${settings.glowColor}, 
+         0 0 ${intensity * 2}px ${settings.glowColor}, 
+         0 0 ${intensity * 3}px ${settings.glowColor},
+         0 0 ${intensity * 5}px ${settings.glowColor}aa,
+         0 0 ${intensity * 8}px ${settings.glowColor}66,
          0 1px 0 ${settings.glowColor}cc,
          1px 0 0 ${settings.glowColor}cc,
          0 -1px 0 ${settings.glowColor}cc,
          -1px 0 0 ${settings.glowColor}cc`
-      : `0 1px 0 ${settings.glowColor}44,
-         1px 0 0 ${settings.glowColor}44,
-         0 -1px 0 ${settings.glowColor}44,
-         -1px 0 0 ${settings.glowColor}44`
+      : 'none'
     
     // フォントウェイトの変換
     const getFontWeight = () => {
@@ -595,18 +603,20 @@ function App() {
   })
 
   const getBoxStyle = () => {
-    const boxGlow = settings.glowIntensity > 0 
-      ? `0 0 ${settings.glowIntensity * 1}px ${settings.glowColor}, 
-         0 0 ${settings.glowIntensity * 2}px ${settings.glowColor}, 
-         0 0 ${settings.glowIntensity * 4}px ${settings.glowColor}aa,
-         0 0 ${settings.glowIntensity * 6}px ${settings.glowColor}66,
-         inset 0 0 ${settings.glowIntensity * 1}px ${settings.glowColor}33`
-      : `0 0 1px ${settings.glowColor}66`
+    // 発光強度0の場合はglow効果なし
+    const intensity = settings.glowIntensity * 0.5; // 発光強度を半分に調整
+    const boxGlow = intensity > 0
+        ? `0 0 ${intensity * 1}px ${settings.glowColor}, 
+     0 0 ${intensity * 2}px ${settings.glowColor}, 
+     0 0 ${intensity * 4}px ${settings.glowColor}aa,
+     0 0 ${intensity * 6}px ${settings.glowColor}66,
+     inset 0 0 ${intensity * 1}px ${settings.glowColor}33`
+        : 'none'
+
     return {
-      ...getBackgroundStyle(),
-      borderColor: settings.textColor,
-      borderWidth: '2px',
-      boxShadow: boxGlow
+        backgroundColor: settings.textColor, // 枠線の色
+        padding: '3px', // これが枠線の太さになる
+        boxShadow: boxGlow, // 発光効果
     }
   }
 
@@ -623,17 +633,25 @@ function App() {
           {/* 時計本体 */}
           <div className="relative text-center w-full h-full">
             {/* ボタン：hover時に表示 - 時計の右上に配置（ウィンドウサイズが動的に調整される） */}
-            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 no-drag z-30">
+            <div className={`absolute top-2 right-2 flex gap-2 transition-opacity duration-500 no-drag z-30 ${isInitialDisplay ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
               {/* 設定ボタン */}
               <button
                 onClick={handleSettings}
-                className="w-10 h-10 flex items-center justify-center bg-gray-600 hover:bg-gray-500 text-white rounded-full shadow-lg"
+                className="flex items-center justify-center bg-gray-600 hover:bg-gray-500 text-white rounded-full shadow-lg"
                 title="アプリ設定"
+                style={{
+                  width: `${currentSizeSettings.buttonSize.sub}px`,
+                  height: `${currentSizeSettings.buttonSize.sub}px`
+                }}
               >
                 <svg
-                  className="w-[26px] h-[26px] block"
+                  className="block"
                   viewBox="0 0 24 24"
                   fill="currentColor"
+                  style={{
+                    width: `${currentSizeSettings.iconSize.sub}px`,
+                    height: `${currentSizeSettings.iconSize.sub}px`
+                  }}
                 >
                   <path d="M19.43 12.98c.04-.32.07-.66.07-1s-.03-.68-.07-1l2.11-1.65a.5.5 0 0 0 .11-.66l-2-3.46a.5.5 0 0 0-.6-.22l-2.49 1a8.12 8.12 0 0 0-1.73-.99L14.5 2.5a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.5l-.38 2.57a8.12 8.12 0 0 0-1.73.99l-2.49-1a.5.5 0 0 0-.6.22l-2 3.46a.5.5 0 0 0 .11.66l2.11 1.65c-.04.32-.07.66-.07 1s.03.68.07 1l-2.11 1.65a.5.5 0 0 0-.11.66l2 3.46a.5.5 0 0 0 .6.22l2.49-1c.54.4 1.12.73 1.73.99l.38 2.57a.5.5 0 0 0 .5.5h4c.28 0 .5-.22.5-.5l.38-2.57c.61-.26 1.19-.59 1.73-.99l2.49 1a.5.5 0 0 0 .6-.22l2-3.46a.5.5 0 0 0-.11-.66l-2.11-1.65zM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5z" />
                 </svg>
@@ -642,71 +660,96 @@ function App() {
               {/* 終了ボタン */}
               <button
                 onClick={handleClose}
-                className="w-10 h-10 flex items-center justify-center bg-gray-600 hover:bg-gray-500 text-white rounded-full shadow-lg"
+                className="flex items-center justify-center bg-gray-600 hover:bg-gray-500 text-white rounded-full shadow-lg"
                 title="終了"
+                style={{
+                  width: `${currentSizeSettings.buttonSize.sub}px`,
+                  height: `${currentSizeSettings.buttonSize.sub}px`
+                }}
               >
-                <svg className="w-5 h-5 block mx-auto" style={{ width: '24px', height: '24px' }} viewBox="0 0 24 24" fill="currentColor">
+                <svg
+                  className="block"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  style={{
+                    width: `${currentSizeSettings.iconSize.sub}px`,
+                    height: `${currentSizeSettings.iconSize.sub}px`
+                  }}
+                >
                   <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
                 </svg>
               </button>
             </div>
 
             {/* アラーム追加ボタン：hover時に表示 - 時計の中央下に配置 */}
-            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 no-drag z-30">
+            <div className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 transition-opacity duration-500 no-drag z-30 ${isInitialDisplay ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
               <button
                 onClick={handleAddAlarm}
-                className="w-16 h-16 flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-lg transition-colors duration-200"
+                className="flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-lg transition-colors duration-200"
                 title="アラーム追加"
+                style={{
+                  width: `${currentSizeSettings.buttonSize.main}px`,
+                  height: `${currentSizeSettings.buttonSize.main}px`
+                }}
               >
-                <svg className="w-10 h-10 block" viewBox="0 0 24 24" fill="currentColor">
+                <svg
+                  className="block"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  style={{
+                    width: `${currentSizeSettings.iconSize.main}px`,
+                    height: `${currentSizeSettings.iconSize.main}px`
+                  }}
+                >
                   <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
                 </svg>
               </button>
             </div>
 
-            <div 
-              className={`w-full h-full flex flex-col items-center justify-center rounded-lg border-2 shadow-lg ${getFontClass()}`}
+            <div
+              className="w-full h-full rounded-lg shadow-lg"
               style={getBoxStyle()}
             >
-
-              
-              {settings.displayFormat === 'datetime' && date && (
-                (() => {
-                  const sizeMapping = sizeMappingDateTime;
-                  const currentSizeSettings = sizeMapping[settings.size];
-                  return (
-                    <>
-                      <div 
-                        style={{
-                          ...getTextStyle(),
-                          fontSize: `${currentSizeSettings.fontSize.date}px`
-                        }}
-                        className="mb-1 select-none"
-                      >
-                        {date}
-                      </div>
-                      <div 
-                        className="my-1 mx-auto w-5/6" 
-                        style={{ 
-                          borderColor: settings.textColor, 
-                          borderTopWidth: 1,
-                          boxShadow: settings.glowIntensity > 0 
-                            ? `0 0 ${settings.glowIntensity * 1}px ${settings.glowColor}, 0 0 ${settings.glowIntensity * 3}px ${settings.glowColor}aa` 
-                            : `0 0 1px ${settings.glowColor}44`
-                        }} 
-                      />
-                    </>
-                  )
-                })()
-              )}
-              <div 
-                style={{
-                  ...getTextStyle(),
-                  fontSize: `${currentSizeSettings.fontSize.time}px`
-                }}
-                className="select-none"
+              <div
+                className={`w-full h-full flex flex-col items-center justify-center rounded-lg ${getFontClass()}`}
+                style={{ ...getBackgroundStyle(), ...getTextStyle() }}
               >
-                {time}
+                {settings.displayFormat === 'datetime' && date && (
+                  (() => {
+                    const sizeMapping = sizeMappingDateTime;
+                    const currentSizeSettings = sizeMapping[settings.size];
+                    return (
+                      <>
+                        <div
+                          style={{
+                            fontSize: `${currentSizeSettings.fontSize.date}px`
+                          }}
+                          className={`${settings.size === 1 ? '' : 'mb-1'} select-none`}
+                        >
+                          {date}
+                        </div>
+                        <div
+                          className={`${settings.size === 1 ? 'mt-0 mb-1' : 'my-1'} mx-auto w-5/6`}
+                          style={{
+                            borderColor: settings.textColor,
+                            borderTopWidth: 1,
+                            boxShadow: settings.glowIntensity > 0
+                              ? `0 0 ${settings.glowIntensity * 1}px ${settings.glowColor}, 0 0 ${settings.glowIntensity * 3}px ${settings.glowColor}aa`
+                              : `0 0 1px ${settings.glowColor}44`
+                          }}
+                        />
+                      </>
+                    )
+                  })()
+                )}
+                <div
+                  style={{
+                    fontSize: `${currentSizeSettings.fontSize.time}px`
+                  }}
+                  className="select-none"
+                >
+                  {time}
+                </div>
               </div>
             </div>
           </div>
@@ -721,31 +764,33 @@ function App() {
               <div 
                 className="relative rounded-xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-700"
                 style={{
-                  width: Math.min(currentSizeSettings.windowWidth * 0.5, 180),
-                  padding: Math.max(currentSizeSettings.windowWidth * 0.04, 20),
+                  width: `${currentSizeSettings.popup.width}px`,
+                  padding: `${currentSizeSettings.popup.padding}px`,
                   backdropFilter: 'blur(20px)',
                   backgroundColor: 'rgba(255, 255, 255, 0.95)'
                 }}
               >
                 
-                {/* アラーム名と時刻 */}
-                <div className="text-center">
-                  <p className="text-gray-600 dark:text-gray-400 font-medium mb-3"
-                     style={{ 
-                       fontSize: Math.min(currentSizeSettings.windowWidth * 0.032, 13),
-                       lineHeight: '1.2'
-                     }}
-                  >
-                    {alarmNotification.name}
-                  </p>
-                  
-                  <p className="font-mono font-light text-gray-900 dark:text-gray-100 mb-4"
-                     style={{ fontSize: Math.min(currentSizeSettings.windowWidth * 0.08, 32) }}
-                  >
-                    {String(alarmNotification.hour).padStart(2, '0')}:
-                    {String(alarmNotification.minute).padStart(2, '0')}
-                  </p>
-                </div>
+                {/* isCompactPopupがtrueでない場合のみ、アラーム名と時刻を表示 */}
+                {!(currentSizeSettings as any).isCompactPopup && (
+                  <div className="text-center">
+                    <p className="text-gray-600 dark:text-gray-400 font-medium mb-3"
+                       style={{ 
+                         fontSize: `${currentSizeSettings.popup.nameSize}px`,
+                         lineHeight: '1.2'
+                       }}
+                    >
+                      {alarmNotification.name}
+                    </p>
+                    
+                    <p className="font-mono font-light text-gray-900 dark:text-gray-100 mb-4"
+                       style={{ fontSize: `${currentSizeSettings.popup.timeSize}px` }}
+                    >
+                      {String(alarmNotification.hour).padStart(2, '0')}:
+                      {String(alarmNotification.minute).padStart(2, '0')}
+                    </p>
+                  </div>
+                )}
                 
                 {/* シンプルなボタン */}
                 <button
@@ -759,8 +804,8 @@ function App() {
                   }}
                   className="w-full rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium transition-all duration-200 hover:bg-gray-800 dark:hover:bg-gray-100 active:scale-95"
                   style={{ 
-                    padding: `${Math.max(currentSizeSettings.windowHeight * 0.02, 10)}px`,
-                    fontSize: Math.min(currentSizeSettings.windowWidth * 0.04, 16)
+                    padding: `${currentSizeSettings.popup.buttonPadding}px`,
+                    fontSize: `${currentSizeSettings.popup.buttonFontSize}px`
                   }}
                 >
                   OK

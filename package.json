@@ -60,7 +60,8 @@
         "win": {
             "target": [
                 "nsis"
-            ]
+            ],
+            "icon": "src/assets/icons/icon.ico"
         },
         "mac": {
             "target": [
@@ -70,7 +71,8 @@
             "hardenedRuntime": true,
             "gatekeeperAssess": false,
             "entitlements": "build/entitlements.mac.plist",
-            "entitlementsInherit": "build/entitlements.mac.plist"
+            "entitlementsInherit": "build/entitlements.mac.plist",
+            "icon": "src/assets/icons/icon.icns"
         },
         "linux": {
             "target": [
