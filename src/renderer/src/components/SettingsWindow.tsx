@@ -49,6 +49,40 @@ const SettingsWindow: React.FC = () => {
     window.close();
   };
 
+  // カウントダウン試聴
+  const previewCountdown = (pitchBeep: number, pitchBell: number, bellDuration: number, text?: string) => {
+    if (text) {
+      if ((window as any).electronAPI.platform === 'linux') {
+        ;(window as any).electronAPI.speakText(text)
+      } else {
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.lang = 'ja-JP'
+        utterance.rate = 1.2
+        speechSynthesis.speak(utterance)
+      }
+    }
+    try {
+      const gainValue = settings.countdownVolume / 100
+      const ctx = new AudioContext()
+      const times = [0, 1.0, 2.0, 3.0]
+      times.forEach((t, i) => {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.frequency.value = i === 3 ? pitchBell : pitchBeep
+        const duration = i === 3 ? bellDuration : 0.15
+        gain.gain.setValueAtTime(gainValue, ctx.currentTime + t)
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + duration)
+        osc.start(ctx.currentTime + t)
+        osc.stop(ctx.currentTime + t + duration)
+      })
+      setTimeout(() => ctx.close(), 5000)
+    } catch (e) {
+      console.error('試聴エラー:', e)
+    }
+  }
+
   // 表示形式に基づいて適切なサイズマッピングを選択
   const currentSizeMapping =
     settings.displayFormat === 'datetime' ? sizeMappingDateTime : sizeMappingTime;
@@ -486,6 +520,160 @@ const SettingsWindow: React.FC = () => {
               />
             </div>
           </section>
+
+          {/* カウントダウン設定 */}
+          <section style={{ marginBottom: '20px' }}>
+            <h2 style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#374151',
+              marginBottom: '4px'
+            }}>
+              カウントダウン
+            </h2>
+            <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '12px' }}>
+              毎分・毎5分・毎15分・毎時間の4秒前にピッピッピッピーンで通知します。上位が優先（毎時間 &gt; 毎15分 &gt; 毎5分 &gt; 毎分）
+            </p>
+
+            {/* 音量 */}
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#4b5563',
+                marginBottom: '8px'
+              }}>
+                音量: {settings.countdownVolume}
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={settings.countdownVolume}
+                onChange={(e) => setSettings(prev => ({ ...prev, countdownVolume: Number(e.target.value) }))}
+                style={{ width: '100%' }}
+              />
+            </div>
+
+            {/* テーブルヘッダー */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 60px 80px 80px',
+              gap: '8px',
+              alignItems: 'center',
+              padding: '6px 8px',
+              backgroundColor: '#f9fafb',
+              borderRadius: '6px 6px 0 0',
+              border: '1px solid #e5e7eb',
+              borderBottom: 'none'
+            }}>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>種類</span>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280', textAlign: 'center' }}>有効</span>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280', textAlign: 'center' }}>アナウンス</span>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280', textAlign: 'center' }}>試聴</span>
+            </div>
+
+            {[
+              {
+                label: '毎時間',
+                desc: '「まもなく○時です」',
+                enabledKey: 'countdownEveryHour' as const,
+                announceKey: 'countdownEveryHourAnnounce' as const,
+                pitchBeep: 1568, pitchBell: 2093, bellDuration: 1.2,
+                previewText: 'まもなく10時です',
+                hasAnnounce: true,
+              },
+              {
+                label: '毎15分',
+                desc: '「まもなく15分です」',
+                enabledKey: 'countdownEvery15Min' as const,
+                announceKey: 'countdownEvery15MinAnnounce' as const,
+                pitchBeep: 1319, pitchBell: 2093, bellDuration: 1.2,
+                previewText: 'まもなく15分です',
+                hasAnnounce: true,
+              },
+              {
+                label: '毎5分',
+                desc: '「まもなく5分です」',
+                enabledKey: 'countdownEvery5Min' as const,
+                announceKey: 'countdownEvery5MinAnnounce' as const,
+                pitchBeep: 1047, pitchBell: 2093, bellDuration: 1.2,
+                previewText: 'まもなく5分です',
+                hasAnnounce: true,
+              },
+              {
+                label: '毎分',
+                desc: '音のみ',
+                enabledKey: 'countdownEveryMinute' as const,
+                announceKey: null as null,
+                pitchBeep: 880, pitchBell: 1760, bellDuration: 0.8,
+                previewText: undefined as undefined,
+                hasAnnounce: false,
+              },
+            ].map((row, idx, arr) => (
+              <div
+                key={row.label}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 60px 80px 80px',
+                  gap: '8px',
+                  alignItems: 'center',
+                  padding: '10px 8px',
+                  border: '1px solid #e5e7eb',
+                  borderTop: 'none',
+                  borderRadius: idx === arr.length - 1 ? '0 0 6px 6px' : '0',
+                  backgroundColor: settings[row.enabledKey] ? '#f0f9ff' : 'white',
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1f2937' }}>{row.label}</div>
+                  <div style={{ fontSize: '11px', color: '#9ca3af' }}>{row.desc}</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={settings[row.enabledKey]}
+                    onChange={(e) => setSettings(prev => ({ ...prev, [row.enabledKey]: e.target.checked }))}
+                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                  />
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  {row.hasAnnounce && row.announceKey ? (
+                    <input
+                      type="checkbox"
+                      checked={settings[row.announceKey]}
+                      disabled={!settings[row.enabledKey]}
+                      onChange={(e) => setSettings(prev => ({ ...prev, [row.announceKey!]: e.target.checked }))}
+                      style={{ width: '16px', height: '16px', cursor: settings[row.enabledKey] ? 'pointer' : 'not-allowed', opacity: settings[row.enabledKey] ? 1 : 0.4 }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: '12px', color: '#d1d5db' }}>─</span>
+                  )}
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <button
+                    onClick={() => previewCountdown(
+                      row.pitchBeep, row.pitchBell, row.bellDuration,
+                      row.hasAnnounce && row.announceKey && settings[row.announceKey] ? row.previewText : undefined
+                    )}
+                    style={{
+                      padding: '4px 10px',
+                      fontSize: '12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      backgroundColor: 'white',
+                      cursor: 'pointer',
+                      color: '#374151',
+                    }}
+                  >
+                    試聴
+                  </button>
+                </div>
+              </div>
+            ))}
+          </section>
+
         </div>
       </div>
 

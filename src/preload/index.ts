@@ -66,7 +66,10 @@ const api = {
   deleteAllSettings: (): Promise<void> => ipcRenderer.invoke('delete-all-settings'),
 
   // コンテキストメニュー表示
-  showContextMenu: (): void => ipcRenderer.send('show-context-menu')
+  showContextMenu: (): void => ipcRenderer.send('show-context-menu'),
+
+  // 音声アナウンス（espeak-ng経由）
+  speakText: (text: string): void => ipcRenderer.send('speak-text', text)
 }
 
 contextBridge.exposeInMainWorld('electronAPI', api) 

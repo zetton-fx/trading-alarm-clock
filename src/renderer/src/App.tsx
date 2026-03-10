@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useSettingsStore } from './store/settingsStore'
 import { useAlarmStore } from './store/alarmStore'
 import SettingsWindow from './components/SettingsWindow'
@@ -522,6 +522,120 @@ function App() {
     const timer = setInterval(update, 100)
     return () => clearInterval(timer)
   }, [settings.displayFormat])
+
+  // カウントダウン用ビープ音を再生
+  const playCountdownBeeps = (pitchBeep: number, pitchBell: number, bellDuration: number) => {
+    setTimeout(() => {
+    try {
+      const gainValue = settings.countdownVolume / 100
+      const ctx = getBeepAudioCtx()
+      const times = [0, 1.0, 2.0, 3.0]
+      times.forEach((t, i) => {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        const freq = i === 3 ? pitchBell : pitchBeep
+        const duration = i === 3 ? bellDuration : 0.15
+        gain.gain.setValueAtTime(gainValue, ctx.currentTime + t)
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + duration)
+        osc.frequency.value = freq
+        osc.start(ctx.currentTime + t)
+        osc.stop(ctx.currentTime + t + duration)
+      })
+    } catch (e) {
+      console.error('カウントダウンビープ再生エラー:', e)
+    }
+    }, 0)
+  }
+
+  // カウントダウン用アナウンスを再生（ビープとは独立）
+  const playCountdownAnnouncement = (text: string) => {
+    try {
+      if ((window as any).electronAPI.platform === 'linux') {
+        ;(window as any).electronAPI.speakText(text)
+      } else {
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.lang = 'ja-JP'
+        utterance.rate = 1.2
+        speechSynthesis.speak(utterance)
+      }
+    } catch (e) {
+      console.error('アナウンス再生エラー:', e)
+    }
+  }
+
+  // カウントダウンの優先種別を判定（上位優先）
+  type CountdownType = 'hour' | '15min' | '5min' | '1min'
+  const getCountdownType = (m: number): CountdownType | null => {
+    if (settings.countdownEveryHour && m === 0) return 'hour'
+    if (settings.countdownEvery15Min && m % 15 === 0) return '15min'
+    if (settings.countdownEvery5Min && m % 5 === 0) return '5min'
+    if (settings.countdownEveryMinute) return '1min'
+    return null
+  }
+
+  // カウントダウン用AudioContextを再利用（毎回作成するとラグが発生するため）
+  const beepAudioCtxRef = useRef<AudioContext | null>(null)
+  const getBeepAudioCtx = (): AudioContext => {
+    if (!beepAudioCtxRef.current || beepAudioCtxRef.current.state === 'closed') {
+      beepAudioCtxRef.current = new AudioContext()
+    }
+    return beepAudioCtxRef.current
+  }
+
+  // カウントダウン チェック（100ms間隔で監視、重複防止にrefを使用）
+  const lastBeepKey = useRef<string>('')
+  const lastAnnounceKey = useRef<string>('')
+
+  useEffect(() => {
+    const check = () => {
+      const now = new Date()
+      const h = now.getHours()
+      const m = now.getMinutes()
+      const s = now.getSeconds()
+
+      // 次の分の節目を確認（:57のピーンが次の分の:00に鳴るため）
+      const nextM = (m + 1) % 60
+      const nextH = m === 59 ? (h + 1) % 24 : h
+      const type = getCountdownType(nextM)
+      if (!type) return
+
+      // アナウンス（:52、ビープとは独立）
+      if (s === 52) {
+        const key = `announce:${h}:${m}`
+        if (lastAnnounceKey.current !== key) {
+          lastAnnounceKey.current = key
+          let text: string | null = null
+          if (type === 'hour' && settings.countdownEveryHourAnnounce) {
+            text = `まもなく${nextH}時です`
+          } else if (type === '15min' && settings.countdownEvery15MinAnnounce) {
+            text = `まもなく${nextM}分です`
+          } else if (type === '5min' && settings.countdownEvery5MinAnnounce) {
+            text = `まもなく${nextM}分です`
+          }
+          if (text) playCountdownAnnouncement(text)
+        }
+      }
+
+      // ビープ（:57、最後のピーンが:00に鳴るように）
+      if (s === 57) {
+        const key = `beep:${h}:${m}`
+        if (lastBeepKey.current !== key) {
+          lastBeepKey.current = key
+          if (type === 'hour')   playCountdownBeeps(1568, 2093, 1.2)
+          else if (type === '15min') playCountdownBeeps(1319, 2093, 1.2)
+          else if (type === '5min')  playCountdownBeeps(1047, 2093, 1.2)
+          else if (type === '1min')  playCountdownBeeps(880, 1760, 0.8)
+        }
+      }
+    }
+
+    const timer = setInterval(check, 100)
+    return () => clearInterval(timer)
+  }, [settings.countdownEveryMinute, settings.countdownEvery5Min, settings.countdownEvery15Min,
+      settings.countdownEveryHour, settings.countdownEvery5MinAnnounce,
+      settings.countdownEvery15MinAnnounce, settings.countdownEveryHourAnnounce])
 
   const handleSettings = () => {
     console.log('設定ボタンがクリックされました')
