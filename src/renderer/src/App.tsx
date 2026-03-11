@@ -499,54 +499,68 @@ function App() {
     }
   }, [loadSettings, loadAlarmSettings, setAlarmSettings])
 
-  // 時計の更新
+  // 時計の更新 - requestAnimationFrame で毎フレーム監視、秒が変わった瞬間だけ setState
   useEffect(() => {
+    let animFrameId: number
+    let lastSec = -1
+
     const update = () => {
       const now = new Date()
-      if (settings.displayFormat === 'datetime') {
-        setDate(
-          `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now
-            .getDate())
-            .padStart(2, '0')}`
+      const s = now.getSeconds()
+      if (s !== lastSec) {
+        lastSec = s
+        if (settings.displayFormat === 'datetime') {
+          setDate(
+            `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+          )
+        } else {
+          setDate('')
+        }
+        setTime(
+          `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(s).padStart(2, '0')}`
         )
-      } else {
-        setDate('')
       }
-      setTime(
-        `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(
-          now.getSeconds()
-        ).padStart(2, '0')}`
-      )
+      animFrameId = requestAnimationFrame(update)
     }
-    update()
-    const timer = setInterval(update, 100)
-    return () => clearInterval(timer)
+
+    animFrameId = requestAnimationFrame(update)
+    return () => cancelAnimationFrame(animFrameId)
   }, [settings.displayFormat])
 
-  // カウントダウン用ビープ音を再生
+  // カウントダウン用ビープ音を再生（次の分の :00.000 に絶対スケジューリング）
   const playCountdownBeeps = (pitchBeep: number, pitchBell: number, bellDuration: number) => {
-    setTimeout(() => {
     try {
       const gainValue = settings.countdownVolume / 100
       const ctx = getBeepAudioCtx()
-      const times = [0, 1.0, 2.0, 3.0]
-      times.forEach((t, i) => {
+
+      // 次の分の :00.000 が AudioContext 時間で何秒後かを計算
+      const now = new Date()
+      const msToNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds()
+      const bellTime = ctx.currentTime + msToNextMinute / 1000
+
+      // ピーンの 3, 2, 1 秒前と ピーン自体をスケジュール
+      const offsets = [-3.0, -2.0, -1.0, 0.0]
+      offsets.forEach((offset, i) => {
+        const startTime = bellTime + offset
+        if (startTime <= ctx.currentTime + 0.01) return // 過去の音はスキップ
+
         const osc = ctx.createOscillator()
         const gain = ctx.createGain()
         osc.connect(gain)
         gain.connect(ctx.destination)
-        const freq = i === 3 ? pitchBell : pitchBeep
-        const duration = i === 3 ? bellDuration : 0.15
-        gain.gain.setValueAtTime(gainValue, ctx.currentTime + t)
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + duration)
+
+        const isLast = i === 3
+        const freq = isLast ? pitchBell : pitchBeep
+        const duration = isLast ? bellDuration : 0.15
+        gain.gain.setValueAtTime(gainValue, startTime)
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration)
         osc.frequency.value = freq
-        osc.start(ctx.currentTime + t)
-        osc.stop(ctx.currentTime + t + duration)
+        osc.start(startTime)
+        osc.stop(startTime + duration + 0.1)
       })
     } catch (e) {
       console.error('カウントダウンビープ再生エラー:', e)
     }
-    }, 0)
   }
 
   // カウントダウン用アナウンスを再生（ビープとは独立）
@@ -601,8 +615,8 @@ function App() {
       const type = getCountdownType(nextM)
       if (!type) return
 
-      // アナウンス（:52、ビープとは独立）
-      if (s === 52) {
+      // アナウンス（:50〜:54の広いウィンドウでキャッチ）
+      if (s >= 50 && s <= 54) {
         const key = `announce:${h}:${m}`
         if (lastAnnounceKey.current !== key) {
           lastAnnounceKey.current = key
@@ -618,12 +632,12 @@ function App() {
         }
       }
 
-      // ビープ（:57、最後のピーンが:00に鳴るように）
-      if (s === 57) {
+      // ビープ（:54〜:59の広いウィンドウでキャッチ、絶対スケジューリングで :00 に正確に同期）
+      if (s >= 54 && s <= 59) {
         const key = `beep:${h}:${m}`
         if (lastBeepKey.current !== key) {
           lastBeepKey.current = key
-          if (type === 'hour')   playCountdownBeeps(1568, 2093, 1.2)
+          if (type === 'hour')       playCountdownBeeps(1568, 2093, 1.2)
           else if (type === '15min') playCountdownBeeps(1319, 2093, 1.2)
           else if (type === '5min')  playCountdownBeeps(1047, 2093, 1.2)
           else if (type === '1min')  playCountdownBeeps(880, 1760, 0.8)
