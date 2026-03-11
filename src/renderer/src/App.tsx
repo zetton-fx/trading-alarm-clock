@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useSettingsStore } from './store/settingsStore'
 import { useAlarmStore } from './store/alarmStore'
 import SettingsWindow from './components/SettingsWindow'
@@ -499,29 +499,189 @@ function App() {
     }
   }, [loadSettings, loadAlarmSettings, setAlarmSettings])
 
-  // 時計の更新
+  // 時計の更新 - requestAnimationFrame で毎フレーム監視、秒が変わった瞬間だけ setState
   useEffect(() => {
+    let animFrameId: number
+    let lastSec = -1
+
     const update = () => {
       const now = new Date()
-      if (settings.displayFormat === 'datetime') {
-        setDate(
-          `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now
-            .getDate())
-            .padStart(2, '0')}`
+      const s = now.getSeconds()
+      if (s !== lastSec) {
+        lastSec = s
+        if (settings.displayFormat === 'datetime') {
+          setDate(
+            `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+          )
+        } else {
+          setDate('')
+        }
+        setTime(
+          `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(s).padStart(2, '0')}`
         )
-      } else {
-        setDate('')
       }
-      setTime(
-        `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(
-          now.getSeconds()
-        ).padStart(2, '0')}`
-      )
+      animFrameId = requestAnimationFrame(update)
     }
-    update()
-    const timer = setInterval(update, 100)
-    return () => clearInterval(timer)
+
+    animFrameId = requestAnimationFrame(update)
+    return () => cancelAnimationFrame(animFrameId)
   }, [settings.displayFormat])
+
+  // カウントダウン用ビープ音を再生
+  // ピッ×3: 1つのsetTimeoutで:57頃に発火 → AudioContextで正確な1s間隔を保証
+  // ピーン: 独立したsetTimeoutでwall clock直接同期 → :00に絶対ずれない
+  const playCountdownBeeps = (pitchBeep: number, pitchBell: number, bellDuration: number) => {
+    const gainValue = settings.countdownVolume / 100
+    const msToNextMinute = 60000 - (Date.now() % 60000)
+
+    // ピッ×3: :57.000 頃に1回だけ発火、AudioContextでまとめてスケジュール（間隔は sample-accurate）
+    setTimeout(async () => {
+      try {
+        const ctx = getBeepAudioCtx()
+        if (ctx.state === 'suspended') await ctx.resume()
+        const base = ctx.currentTime + 0.005
+        for (let j = 0; j < 3; j++) {
+          const startTime = base + j * 1.0
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.connect(gain)
+          gain.connect(ctx.destination)
+          gain.gain.setValueAtTime(gainValue, startTime)
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.15)
+          osc.frequency.value = pitchBeep
+          osc.start(startTime)
+          osc.stop(startTime + 0.25)
+        }
+      } catch (e) {
+        console.error('ピッ再生エラー:', e)
+      }
+    }, Math.max(0, msToNextMinute - 3000))
+
+    // ピーン: 独立した setTimeout で wall clock に直接同期（:00 に確実に発火）
+    setTimeout(async () => {
+      try {
+        const ctx = getBeepAudioCtx()
+        if (ctx.state === 'suspended') await ctx.resume()
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        const startTime = ctx.currentTime + 0.005
+        gain.gain.setValueAtTime(gainValue, startTime)
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + bellDuration)
+        osc.frequency.value = pitchBell
+        osc.start(startTime)
+        osc.stop(startTime + bellDuration + 0.1)
+      } catch (e) {
+        console.error('ピーン再生エラー:', e)
+      }
+    }, Math.max(0, msToNextMinute))
+  }
+
+  // カウントダウン用アナウンスを再生（ビープとは独立）
+  const playCountdownAnnouncement = (text: string) => {
+    try {
+      if ((window as any).electronAPI.platform === 'linux') {
+        ;(window as any).electronAPI.speakText(text)
+      } else {
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.lang = 'ja-JP'
+        utterance.rate = 1.2
+        speechSynthesis.speak(utterance)
+      }
+    } catch (e) {
+      console.error('アナウンス再生エラー:', e)
+    }
+  }
+
+  // カウントダウンの優先種別を判定（上位優先）
+  type CountdownType = 'hour' | '15min' | '5min' | '1min'
+  const getCountdownType = (m: number): CountdownType | null => {
+    if (settings.countdownEveryHour && m === 0) return 'hour'
+    if (settings.countdownEvery15Min && m % 15 === 0) return '15min'
+    if (settings.countdownEvery5Min && m % 5 === 0) return '5min'
+    if (settings.countdownEveryMinute) return '1min'
+    return null
+  }
+
+  // カウントダウン用AudioContextを再利用（毎回作成するとラグが発生するため）
+  const beepAudioCtxRef = useRef<AudioContext | null>(null)
+  const getBeepAudioCtx = (): AudioContext => {
+    if (!beepAudioCtxRef.current || beepAudioCtxRef.current.state === 'closed') {
+      beepAudioCtxRef.current = new AudioContext()
+    }
+    return beepAudioCtxRef.current
+  }
+
+  // カウントダウン チェック（100ms間隔で監視、重複防止にrefを使用）
+  const lastBeepKey = useRef<string>('')
+  const lastAnnounceKey = useRef<string>('')
+
+  useEffect(() => {
+    const check = () => {
+      const now = new Date()
+      const h = now.getHours()
+      const m = now.getMinutes()
+      const s = now.getSeconds()
+
+      // 次の分の節目を確認（:57のピーンが次の分の:00に鳴るため）
+      const nextM = (m + 1) % 60
+      const nextH = m === 59 ? (h + 1) % 24 : h
+      const type = getCountdownType(nextM)
+      if (!type) return
+
+      // アナウンス（:54〜:55 でキャッチ、ピッ開始の3秒前）
+      // アナウンスがない場合も無音バッファを再生してAudioContextをウォームアップ
+      // → WindowsのタイマーAPIが活性化され、直後のsetTimeoutの精度が向上する
+      if (s >= 54 && s <= 55) {
+        const key = `announce:${h}:${m}`
+        if (lastAnnounceKey.current !== key) {
+          lastAnnounceKey.current = key
+          let text: string | null = null
+          if (type === 'hour' && settings.countdownEveryHourAnnounce) {
+            text = `まもなく${nextH}時です`
+          } else if (type === '15min' && settings.countdownEvery15MinAnnounce) {
+            text = `まもなく${nextM}分です`
+          } else if (type === '5min' && settings.countdownEvery5MinAnnounce) {
+            text = `まもなく${nextM}分です`
+          }
+          if (text) {
+            playCountdownAnnouncement(text)
+          } else {
+            // アナウンスなし：無音バッファでAudioContextとOSオーディオパイプラインをウォームアップ
+            try {
+              const ctx = getBeepAudioCtx()
+              if (ctx.state === 'suspended') ctx.resume().catch(() => {})
+              const silentBuffer = ctx.createBuffer(1, 1, ctx.sampleRate)
+              const source = ctx.createBufferSource()
+              source.buffer = silentBuffer
+              source.connect(ctx.destination)
+              source.start()
+            } catch (e) {
+              // ウォームアップ失敗は無視
+            }
+          }
+        }
+      }
+
+      // ビープ（:54〜:59の広いウィンドウでキャッチ、絶対スケジューリングで :00 に正確に同期）
+      if (s >= 54 && s <= 59) {
+        const key = `beep:${h}:${m}`
+        if (lastBeepKey.current !== key) {
+          lastBeepKey.current = key
+          if (type === 'hour')       playCountdownBeeps(1568, 2093, 1.2)
+          else if (type === '15min') playCountdownBeeps(1319, 2093, 1.2)
+          else if (type === '5min')  playCountdownBeeps(1047, 2093, 1.2)
+          else if (type === '1min')  playCountdownBeeps(880, 1760, 0.8)
+        }
+      }
+    }
+
+    const timer = setInterval(check, 100)
+    return () => clearInterval(timer)
+  }, [settings.countdownEveryMinute, settings.countdownEvery5Min, settings.countdownEvery15Min,
+      settings.countdownEveryHour, settings.countdownEvery5MinAnnounce,
+      settings.countdownEvery15MinAnnounce, settings.countdownEveryHourAnnounce])
 
   const handleSettings = () => {
     console.log('設定ボタンがクリックされました')

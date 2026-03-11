@@ -1,4 +1,10 @@
 import { app, shell, BrowserWindow, ipcMain, Menu } from 'electron'
+
+// Linux/Docker環境でのオーディオ出力を有効化
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('disable-audio-sandbox')
+  app.commandLine.appendSwitch('no-sandbox')
+}
 import { join } from 'path'
 import { promises as fs } from 'fs'
 import { AppSettings, defaultSettings, sizeMappingDateTime, sizeMappingTime } from '../shared/types/settings'
@@ -377,6 +383,20 @@ async function createWindow(): Promise<void> {
 
   ipcMain.on('open-alarm-window', () => {
     createAlarmWindow()
+  })
+
+  // 音声アナウンス（Linux: espeak-ng経由、Windows/Mac: renderer側のspeechSynthesis使用）
+  ipcMain.on('speak-text', (_, text: string) => {
+    if (process.platform === 'linux') {
+      const { spawn } = require('child_process')
+      const child = spawn('espeak-ng', ['-v', 'ja', '-s', '140', text], {
+        env: process.env,
+        stdio: 'ignore',
+        detached: true
+      })
+      child.unref()
+    }
+    // Windows/Macはレンダラー側で処理
   })
 
   // TextArea用のコンテキストメニューを表示するIPCハンドラ

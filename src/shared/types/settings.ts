@@ -28,6 +28,16 @@ export interface AppSettings {
   
   // 文字の発光強度（0-10）
   glowIntensity: number;
+
+  // カウントダウン設定
+  countdownEveryMinute: boolean;
+  countdownEvery5Min: boolean;
+  countdownEvery15Min: boolean;
+  countdownEveryHour: boolean;
+  countdownEvery5MinAnnounce: boolean;
+  countdownEvery15MinAnnounce: boolean;
+  countdownEveryHourAnnounce: boolean;
+  countdownVolume: number; // 0-100
 }
 
 // デフォルト設定
@@ -41,7 +51,15 @@ export const defaultSettings: AppSettings = {
   textColor: '#000000', // 黒色
   backgroundColor: '#ffffff', // 白色
   glowColor: '#ffffff', // 白色
-  glowIntensity: 0
+  glowIntensity: 0,
+  countdownEveryMinute: false,
+  countdownEvery5Min: false,
+  countdownEvery15Min: false,
+  countdownEveryHour: false,
+  countdownEvery5MinAnnounce: true,
+  countdownEvery15MinAnnounce: true,
+  countdownEveryHourAnnounce: true,
+  countdownVolume: 70,
 };
 
 // 線形補間ヘルパー関数
