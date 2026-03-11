@@ -528,42 +528,52 @@ function App() {
   }, [settings.displayFormat])
 
   // カウントダウン用ビープ音を再生
-  // 各ビープを個別の setTimeout でスケジュール（Date.now() 基準 = OS wall clock に直接同期）
-  // AudioContext.currentTime と Date.now() の同期ズレを完全に回避
+  // ピッ×3: 1つのsetTimeoutで:57頃に発火 → AudioContextで正確な1s間隔を保証
+  // ピーン: 独立したsetTimeoutでwall clock直接同期 → :00に絶対ずれない
   const playCountdownBeeps = (pitchBeep: number, pitchBell: number, bellDuration: number) => {
     const gainValue = settings.countdownVolume / 100
-    // Date.now() % 60000 = 現在の分内の経過ms（タイムゾーン不問で正確）
     const msToNextMinute = 60000 - (Date.now() % 60000)
 
-    // ピーンの 3, 2, 1 秒前と ピーン自体を個別タイマーでスケジュール
-    const offsets = [-3000, -2000, -1000, 0]
-    offsets.forEach((offset, i) => {
-      const msUntilBeep = msToNextMinute + offset
-      if (msUntilBeep < 0) return // 過去の音はスキップ
-
-      setTimeout(() => {
-        try {
-          const ctx = getBeepAudioCtx()
+    // ピッ×3: :57.000 頃に1回だけ発火、AudioContextでまとめてスケジュール（間隔は sample-accurate）
+    setTimeout(() => {
+      try {
+        const ctx = getBeepAudioCtx()
+        const base = ctx.currentTime + 0.005
+        for (let j = 0; j < 3; j++) {
+          const startTime = base + j * 1.0
           const osc = ctx.createOscillator()
           const gain = ctx.createGain()
           osc.connect(gain)
           gain.connect(ctx.destination)
-
-          const isLast = i === 3
-          const freq = isLast ? pitchBell : pitchBeep
-          const duration = isLast ? bellDuration : 0.15
-          // AudioContext の最小バッファ分だけ未来にスケジュール（即座に再生）
-          const startTime = ctx.currentTime + 0.005
           gain.gain.setValueAtTime(gainValue, startTime)
-          gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration)
-          osc.frequency.value = freq
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.15)
+          osc.frequency.value = pitchBeep
           osc.start(startTime)
-          osc.stop(startTime + duration + 0.1)
-        } catch (e) {
-          console.error('ビープ再生エラー:', e)
+          osc.stop(startTime + 0.25)
         }
-      }, Math.max(0, msUntilBeep))
-    })
+      } catch (e) {
+        console.error('ピッ再生エラー:', e)
+      }
+    }, Math.max(0, msToNextMinute - 3000))
+
+    // ピーン: 独立した setTimeout で wall clock に直接同期（:00 に確実に発火）
+    setTimeout(() => {
+      try {
+        const ctx = getBeepAudioCtx()
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        const startTime = ctx.currentTime + 0.005
+        gain.gain.setValueAtTime(gainValue, startTime)
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + bellDuration)
+        osc.frequency.value = pitchBell
+        osc.start(startTime)
+        osc.stop(startTime + bellDuration + 0.1)
+      } catch (e) {
+        console.error('ピーン再生エラー:', e)
+      }
+    }, Math.max(0, msToNextMinute))
   }
 
   // カウントダウン用アナウンスを再生（ビープとは独立）
