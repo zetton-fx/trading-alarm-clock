@@ -628,8 +628,8 @@ function App() {
       const type = getCountdownType(nextM)
       if (!type) return
 
-      // アナウンス（:55〜:56 でキャッチ、ピッ開始の2秒前）
-      if (s >= 55 && s <= 56) {
+      // アナウンス（:54〜:55 でキャッチ、ピッ開始の3秒前）
+      if (s >= 54 && s <= 55) {
         const key = `announce:${h}:${m}`
         if (lastAnnounceKey.current !== key) {
           lastAnnounceKey.current = key
