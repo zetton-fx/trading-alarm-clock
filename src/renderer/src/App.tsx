@@ -527,40 +527,43 @@ function App() {
     return () => cancelAnimationFrame(animFrameId)
   }, [settings.displayFormat])
 
-  // カウントダウン用ビープ音を再生（次の分の :00.000 に絶対スケジューリング）
+  // カウントダウン用ビープ音を再生
+  // 各ビープを個別の setTimeout でスケジュール（Date.now() 基準 = OS wall clock に直接同期）
+  // AudioContext.currentTime と Date.now() の同期ズレを完全に回避
   const playCountdownBeeps = (pitchBeep: number, pitchBell: number, bellDuration: number) => {
-    try {
-      const gainValue = settings.countdownVolume / 100
-      const ctx = getBeepAudioCtx()
+    const gainValue = settings.countdownVolume / 100
+    // Date.now() % 60000 = 現在の分内の経過ms（タイムゾーン不問で正確）
+    const msToNextMinute = 60000 - (Date.now() % 60000)
 
-      // 次の分の :00.000 が AudioContext 時間で何秒後かを計算
-      const now = new Date()
-      const msToNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds()
-      const bellTime = ctx.currentTime + msToNextMinute / 1000
+    // ピーンの 3, 2, 1 秒前と ピーン自体を個別タイマーでスケジュール
+    const offsets = [-3000, -2000, -1000, 0]
+    offsets.forEach((offset, i) => {
+      const msUntilBeep = msToNextMinute + offset
+      if (msUntilBeep < 0) return // 過去の音はスキップ
 
-      // ピーンの 3, 2, 1 秒前と ピーン自体をスケジュール
-      const offsets = [-3.0, -2.0, -1.0, 0.0]
-      offsets.forEach((offset, i) => {
-        const startTime = bellTime + offset
-        if (startTime <= ctx.currentTime + 0.01) return // 過去の音はスキップ
+      setTimeout(() => {
+        try {
+          const ctx = getBeepAudioCtx()
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.connect(gain)
+          gain.connect(ctx.destination)
 
-        const osc = ctx.createOscillator()
-        const gain = ctx.createGain()
-        osc.connect(gain)
-        gain.connect(ctx.destination)
-
-        const isLast = i === 3
-        const freq = isLast ? pitchBell : pitchBeep
-        const duration = isLast ? bellDuration : 0.15
-        gain.gain.setValueAtTime(gainValue, startTime)
-        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration)
-        osc.frequency.value = freq
-        osc.start(startTime)
-        osc.stop(startTime + duration + 0.1)
-      })
-    } catch (e) {
-      console.error('カウントダウンビープ再生エラー:', e)
-    }
+          const isLast = i === 3
+          const freq = isLast ? pitchBell : pitchBeep
+          const duration = isLast ? bellDuration : 0.15
+          // AudioContext の最小バッファ分だけ未来にスケジュール（即座に再生）
+          const startTime = ctx.currentTime + 0.005
+          gain.gain.setValueAtTime(gainValue, startTime)
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration)
+          osc.frequency.value = freq
+          osc.start(startTime)
+          osc.stop(startTime + duration + 0.1)
+        } catch (e) {
+          console.error('ビープ再生エラー:', e)
+        }
+      }, Math.max(0, msUntilBeep))
+    })
   }
 
   // カウントダウン用アナウンスを再生（ビープとは独立）
