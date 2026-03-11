@@ -535,9 +535,10 @@ function App() {
     const msToNextMinute = 60000 - (Date.now() % 60000)
 
     // ピッ×3: :57.000 頃に1回だけ発火、AudioContextでまとめてスケジュール（間隔は sample-accurate）
-    setTimeout(() => {
+    setTimeout(async () => {
       try {
         const ctx = getBeepAudioCtx()
+        if (ctx.state === 'suspended') await ctx.resume()
         const base = ctx.currentTime + 0.005
         for (let j = 0; j < 3; j++) {
           const startTime = base + j * 1.0
@@ -557,9 +558,10 @@ function App() {
     }, Math.max(0, msToNextMinute - 3000))
 
     // ピーン: 独立した setTimeout で wall clock に直接同期（:00 に確実に発火）
-    setTimeout(() => {
+    setTimeout(async () => {
       try {
         const ctx = getBeepAudioCtx()
+        if (ctx.state === 'suspended') await ctx.resume()
         const osc = ctx.createOscillator()
         const gain = ctx.createGain()
         osc.connect(gain)
