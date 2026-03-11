@@ -631,6 +631,8 @@ function App() {
       if (!type) return
 
       // アナウンス（:54〜:55 でキャッチ、ピッ開始の3秒前）
+      // アナウンスがない場合も無音バッファを再生してAudioContextをウォームアップ
+      // → WindowsのタイマーAPIが活性化され、直後のsetTimeoutの精度が向上する
       if (s >= 54 && s <= 55) {
         const key = `announce:${h}:${m}`
         if (lastAnnounceKey.current !== key) {
@@ -643,7 +645,22 @@ function App() {
           } else if (type === '5min' && settings.countdownEvery5MinAnnounce) {
             text = `まもなく${nextM}分です`
           }
-          if (text) playCountdownAnnouncement(text)
+          if (text) {
+            playCountdownAnnouncement(text)
+          } else {
+            // アナウンスなし：無音バッファでAudioContextとOSオーディオパイプラインをウォームアップ
+            try {
+              const ctx = getBeepAudioCtx()
+              if (ctx.state === 'suspended') ctx.resume().catch(() => {})
+              const silentBuffer = ctx.createBuffer(1, 1, ctx.sampleRate)
+              const source = ctx.createBufferSource()
+              source.buffer = silentBuffer
+              source.connect(ctx.destination)
+              source.start()
+            } catch (e) {
+              // ウォームアップ失敗は無視
+            }
+          }
         }
       }
 
